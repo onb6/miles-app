@@ -1,0 +1,13 @@
+.landing-page-container {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  text-align: center;
+  color: #286e84;
+  background-color: #e8f4f8;
+}
+
+.card-wrapper {
+  display: flex;
+  text-align: center;
+}
