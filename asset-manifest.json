@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/miles-app/static/css/main.78123761.css",
+    "main.js": "/miles-app/static/js/main.503c83f6.js",
+    "static/js/453.d7027dcf.chunk.js": "/miles-app/static/js/453.d7027dcf.chunk.js",
+    "index.html": "/miles-app/index.html",
+    "main.78123761.css.map": "/miles-app/static/css/main.78123761.css.map",
+    "main.503c83f6.js.map": "/miles-app/static/js/main.503c83f6.js.map",
+    "453.d7027dcf.chunk.js.map": "/miles-app/static/js/453.d7027dcf.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.78123761.css",
+    "static/js/main.503c83f6.js"
+  ]
+}
