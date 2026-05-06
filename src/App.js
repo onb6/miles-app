@@ -7,7 +7,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/miles-app/" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   );
