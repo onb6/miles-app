@@ -11,6 +11,13 @@ const LandingPage = () => {
       buttonDisabled: true,
     },
     {
+      title: "Message Board",
+      subtitle: "Let's leave each other notes!",
+      text: "Because I'm always thinking about you :)",
+      buttonText: "Get Messaging",
+      buttonDisabled: true,
+    },
+    {
       title: "Another app",
       subtitle: "Going to figure out more thingssss!",
       text: "I love youuuuu",
