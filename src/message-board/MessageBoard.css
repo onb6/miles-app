@@ -1,3 +1,30 @@
+.messsage-board-header {
+  display: flex;
+  flex-direction: row;
+  padding: 16px 36px;
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  gap: 24px;
+  align-items: center;
+  margin: -48px -48px 0 -48px;
+}
+
+.messsage-board-header h2 {
+  margin: 0;
+}
+
+.back-button-icon {
+  margin-right: 8px;
+}
+
 .message-board-content {
   margin-top: 36px;
+}
+
+.message-card {
+  display: flex;
+  flex-direction: row;
+  margin-right: 12px;
+  margin-bottom: 12px;
+  width: 21rem;
 }

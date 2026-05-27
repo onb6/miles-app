@@ -12,6 +12,7 @@ const MilesCard = (content) => {
   return (
     <Card className="miles-card">
       <img
+        className="miles-card-img"
         alt={content.content.title}
         src={content.content.cardImg || "https://picsum.photos/300/200"}
       />

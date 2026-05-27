@@ -1,11 +1,25 @@
-import { Card, CardBody, CardText } from "reactstrap";
+import { Card, CardBody, CardText, CardSubtitle, Button } from "reactstrap";
 import "./MessageBoard.css";
 
-const MessageItem = (message) => {
+const MessageItem = ({ message, onDelete }) => {
   return (
-    <Card className="miles-card">
+    <Card className="message-card">
       <CardBody>
-        <CardText>{message.message}</CardText>
+        <CardText>{message.content}</CardText>
+        <CardSubtitle className="text-muted" style={{ fontSize: "0.8rem" }}>
+          {message.author} &middot;{" "}
+          {new Date(message.created_at).toLocaleString()}
+        </CardSubtitle>
+        {onDelete && (
+          <Button
+            color="danger"
+            size="sm"
+            style={{ marginTop: "0.5rem" }}
+            onClick={() => onDelete(message.id)}
+          >
+            Delete
+          </Button>
+        )}
       </CardBody>
     </Card>
   );
