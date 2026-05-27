@@ -1,18 +1,18 @@
 {
   "files": {
-    "main.css": "/miles-app/static/css/main.564129d8.css",
-    "main.js": "/miles-app/static/js/main.4a9b1921.js",
+    "main.css": "/miles-app/static/css/main.98c5191f.css",
+    "main.js": "/miles-app/static/js/main.c296bb74.js",
     "static/js/453.d7027dcf.chunk.js": "/miles-app/static/js/453.d7027dcf.chunk.js",
     "static/media/olipop.png": "/miles-app/static/media/olipop.2eb3b51ff1a89347915e.png",
     "static/media/messages.jpg": "/miles-app/static/media/messages.1d96b7aa56d6a9fe41e1.jpg",
     "static/media/loading.png": "/miles-app/static/media/loading.20bbdb4f35afe9d94cbb.png",
     "index.html": "/miles-app/index.html",
-    "main.564129d8.css.map": "/miles-app/static/css/main.564129d8.css.map",
-    "main.4a9b1921.js.map": "/miles-app/static/js/main.4a9b1921.js.map",
+    "main.98c5191f.css.map": "/miles-app/static/css/main.98c5191f.css.map",
+    "main.c296bb74.js.map": "/miles-app/static/js/main.c296bb74.js.map",
     "453.d7027dcf.chunk.js.map": "/miles-app/static/js/453.d7027dcf.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.564129d8.css",
-    "static/js/main.4a9b1921.js"
+    "static/css/main.98c5191f.css",
+    "static/js/main.c296bb74.js"
   ]
 }
