@@ -11,7 +11,10 @@ import "./MilesCard.css";
 const MilesCard = (content) => {
   return (
     <Card className="miles-card">
-      <img alt="Sample" src="https://picsum.photos/300/200" />
+      <img
+        alt={content.content.title}
+        src={content.content.cardImg || "https://picsum.photos/300/200"}
+      />
       <CardBody>
         <CardTitle className="miles-card-title" tag="h5">
           {content.content.title}
@@ -20,7 +23,11 @@ const MilesCard = (content) => {
           {content.content.subtitle}
         </CardSubtitle>
         <CardText>{content.content.text}</CardText>
-        <Button disabled={content.content.buttonDisabled}>
+        <Button
+          disabled={content.content.buttonDisabled}
+          href={content.content.buttonLink}
+          tag="a"
+        >
           {content.content.buttonText}
         </Button>
       </CardBody>

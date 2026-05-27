@@ -1,5 +1,9 @@
 import "./LandingPage.css";
-import MilesCard from "./MilesCard";
+import MilesCard from "./components/MilesCard";
+import OlipopImg from "./assets/olipop.png";
+import LoadingImg from "./assets/loading.png";
+import MessageImg from "./assets/messages.jpg";
+import { Input } from "reactstrap";
 
 const LandingPage = () => {
   const items = [
@@ -9,13 +13,16 @@ const LandingPage = () => {
       text: "Coming soooooon :)",
       buttonText: "Let's Go!",
       buttonDisabled: true,
+      cardImg: OlipopImg,
     },
     {
       title: "Message Board",
       subtitle: "Let's leave each other notes!",
       text: "Because I'm always thinking about you :)",
       buttonText: "Get Messaging",
-      buttonDisabled: true,
+      buttonDisabled: false,
+      buttonLink: "/messages",
+      cardImg: MessageImg,
     },
     {
       title: "Another app",
@@ -23,6 +30,7 @@ const LandingPage = () => {
       text: "I love youuuuu",
       buttonText: "Let's Go!",
       buttonDisabled: true,
+      cardImg: LoadingImg,
     },
   ];
 
@@ -30,8 +38,9 @@ const LandingPage = () => {
     <div className="landing-page-container">
       <h1>Hi Miles! I love you!</h1>
       <div className="card-wrapper">
+        <Input />
         {items.map((item) => (
-          <MilesCard content={item} />
+          <MilesCard id={item.title} content={item} />
         ))}
       </div>
     </div>
