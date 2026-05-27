@@ -3,9 +3,18 @@ import MilesCard from "./components/MilesCard";
 import OlipopImg from "./assets/olipop.png";
 import LoadingImg from "./assets/loading.png";
 import MessageImg from "./assets/messages.jpg";
-import { Input } from "reactstrap";
+import { Button } from "reactstrap";
+import { useAuth } from "./context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
   const items = [
     {
       title: "Olipop Ranking",
@@ -36,6 +45,12 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page-container">
+      <div className="landing-page-header">
+        <span className="header-username">{user?.username}</span>
+        <Button color="outline-secondary" size="sm" onClick={handleLogout}>
+          Log out
+        </Button>
+      </div>
       <h1>Hi Miles! I love you!</h1>
       <div className="card-wrapper">
         {items.map((item) => (

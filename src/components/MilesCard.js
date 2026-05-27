@@ -1,11 +1,4 @@
-import {
-  Card,
-  CardBody,
-  CardTitle,
-  CardSubtitle,
-  CardText,
-  Button,
-} from "reactstrap";
+import { Card, CardBody, CardTitle, CardSubtitle, Button } from "reactstrap";
 import "./MilesCard.css";
 
 const MilesCard = (content) => {
@@ -23,7 +16,6 @@ const MilesCard = (content) => {
         <CardSubtitle className="mb-2 text-muted" tag="h6">
           {content.content.subtitle}
         </CardSubtitle>
-        <CardText>{content.content.text}</CardText>
         <Button
           disabled={content.content.buttonDisabled}
           href={content.content.buttonLink}

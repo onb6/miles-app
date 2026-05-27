@@ -8,6 +8,19 @@
   background-color: aliceblue;
 }
 
+.landing-page-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.header-username {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
 .card-wrapper {
   display: flex;
   text-align: center;
