@@ -2,5 +2,5 @@
 buildCommand = "npm install && npm run build && cd server && npm install --omit=dev"
 
 [deploy]
-startCommand = "caddy run --config /app/Caddyfile"
+startCommand = "node server/index.js"
 
