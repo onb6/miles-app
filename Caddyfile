@@ -1,10 +1,10 @@
-:3000
+:8080
 
 root * /app/build
 encode gzip
 
 # Proxy API requests to backend
-reverse_proxy /api/* miles-app-server-production.up.railway.app:8080
+reverse_proxy /api/* miles-app-server.railway.internal:8080
 
 # Serve static files, but not API routes
 @notapi {
