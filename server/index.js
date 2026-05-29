@@ -28,6 +28,14 @@ app.use("/api/messages", messagesRouter);
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
+// Serve React build in production
+const buildDir = path.join(__dirname, "../build");
+if (fs.existsSync(buildDir)) {
+  app.use(express.static(buildDir));
+  // Let React Router handle all non-API routes
+  app.get("*", (req, res) => res.sendFile(path.join(buildDir, "index.html")));
+}
+
 initDb()
   .then(() => {
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
