@@ -14,6 +14,18 @@
   flex-shrink: 0;
 }
 
+.miles-card .card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding-bottom: 16px;
+}
+
+.miles-card .card-body .btn {
+  margin-top: auto;
+}
+
 .miles-card-title {
   color: #286e84;
+  margin-bottom: 16px;
 }

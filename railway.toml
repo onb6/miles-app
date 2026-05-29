@@ -3,3 +3,4 @@ buildCommand = "npm install && npm run build && cd server && npm install --omit=
 
 [deploy]
 startCommand = "node server/index.js"
+

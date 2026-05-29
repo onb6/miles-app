@@ -58,8 +58,8 @@
 }
 
 .compose-card {
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  background: white;
+  border: 1px solid rgba(40, 110, 132, 0.2);
+  background: #daedf2;
 }
 
 .compose-card-body {

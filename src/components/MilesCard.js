@@ -1,10 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { Card, CardBody, CardTitle, CardSubtitle, Button } from "reactstrap";
 import "./MilesCard.css";
 
 const MilesCard = ({ content }) => {
-  const navigate = useNavigate();
-
   return (
     <Card className="miles-card">
       <img
@@ -21,7 +18,9 @@ const MilesCard = ({ content }) => {
         </CardSubtitle>
         <Button
           disabled={content.buttonDisabled}
-          onClick={() => content.buttonLink && navigate(content.buttonLink)}
+          href={content.buttonLink}
+          tag="a"
+          color="primary"
         >
           {content.buttonText}
         </Button>
