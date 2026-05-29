@@ -2,14 +2,28 @@ const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
 const multer = require("multer");
+const multerS3 = require("multer-s3");
+const { S3Client } = require("@aws-sdk/client-s3");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, "../uploads"),
-  filename: (req, file, cb) => {
+const s3 = new S3Client({
+  region: process.env.BUCKET_REGION,
+  endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
+  credentials: {
+    accessKeyId: process.env.BUCKET_ACCESS_KEY,
+    secretAccessKey: process.env.BUCKET_SECRET_KEY,
+  },
+  forcePathStyle: true,
+});
+
+const storage = multerS3({
+  s3,
+  bucket: process.env.BUCKET_NAME,
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  key: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `${crypto.randomUUID()}${ext}`);
   },
@@ -93,7 +107,9 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const imageUrl = req.file
+    ? `https://${process.env.BUCKET_ENDPOINT}/${process.env.BUCKET_NAME}/${req.file.key}`
+    : null;
 
   try {
     const { rows } = await pool.query(
