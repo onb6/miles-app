@@ -3,5 +3,6 @@
 root * /app/build
 encode gzip
 file_server
+reverse_proxy /api/* miles-app-server-production.up.railway.app:3001
 try_files {path} /index.html
 
