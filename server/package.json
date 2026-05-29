@@ -4,7 +4,6 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "cd .. && npm install && npm run build",
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
