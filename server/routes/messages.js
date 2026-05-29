@@ -24,7 +24,21 @@ const upload = multer({
   },
 });
 
-// GET /api/messages — public
+/**
+ * @swagger
+ * /api/messages:
+ *   get:
+ *     summary: Get all messages (newest first)
+ *     tags: [Messages]
+ *     responses:
+ *       200:
+ *         description: List of messages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Message' }
+ */
 router.get("/", async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -37,7 +51,43 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/messages — requires auth
+/**
+ * @swagger
+ * /api/messages:
+ *   post:
+ *     summary: Create a new message (with optional image)
+ *     tags: [Messages]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [content]
+ *             properties:
+ *               content: { type: string, example: Hello Miles! }
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Message created
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Message' }
+ *       400:
+ *         description: Missing content
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
 router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   const { content } = req.body;
   if (!content || !content.trim())
@@ -57,7 +107,50 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   }
 });
 
-// PATCH /api/messages/:id — requires auth, only own messages
+/**
+ * @swagger
+ * /api/messages/{id}:
+ *   patch:
+ *     summary: Edit your own message
+ *     tags: [Messages]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [content]
+ *             properties:
+ *               content: { type: string, example: Updated message }
+ *     responses:
+ *       200:
+ *         description: Updated message
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Message' }
+ *       400:
+ *         description: Missing content
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       404:
+ *         description: Message not found or not yours
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
 router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
@@ -78,7 +171,33 @@ router.patch("/:id", requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/messages/:id — requires auth, only own messages
+/**
+ * @swagger
+ * /api/messages/{id}:
+ *   delete:
+ *     summary: Delete your own message
+ *     tags: [Messages]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       204:
+ *         description: Deleted
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       404:
+ *         description: Message not found or not yours
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
 router.delete("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   try {

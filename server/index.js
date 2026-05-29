@@ -4,6 +4,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 const fs = require("fs");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 const { initDb } = require("./db");
 const authRouter = require("./routes/auth");
 const messagesRouter = require("./routes/messages");
@@ -25,6 +27,7 @@ app.use(cookieParser());
 app.use("/uploads", express.static(uploadsDir));
 app.use("/api/auth", authRouter);
 app.use("/api/messages", messagesRouter);
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
