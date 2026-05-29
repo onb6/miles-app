@@ -25,28 +25,39 @@ import "./OlipopRankingPage.css";
 const FLAVORS = [
   "Banana Cream",
   "Blackberry Vanilla",
-  "Cherry Vanilla",
+  "Citrus Rush",
   "Classic Grape",
+  "Classic Root Beer",
+  "Cherry Cola",
+  "Cherry Vanilla",
   "Cream Soda",
-  "Crispy Grape",
+  "Crisp Apple",
   "Doctor Goodwin",
   "Ginger Ale",
+  "Ginger Lemon",
   "Lemon Lime",
-  "Moon Mango",
+  "Orange Cream",
   "Orange Squeeze",
   "Peaches & Cream",
-  "Pineapple Mango",
-  "Raspberry Vanilla",
+  "Pineapple Paradise",
   "Root Beer",
   "Strawberry Vanilla",
+  "Shirley Temple",
+  "Raspberry Sherbert",
   "Tropical Punch",
   "Vintage Cola",
-  "Watermelon Wave",
+  "Watermelon Lime",
 ];
 
 const SortableItem = ({ flavor, onRemove }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: flavor });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: flavor });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -79,7 +90,9 @@ const OlipopRankingPage = () => {
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   useEffect(() => {
@@ -135,7 +148,9 @@ const OlipopRankingPage = () => {
         body: JSON.stringify({ flavors: myRanking }),
       });
       if (!res.ok) throw new Error("Failed to save");
-      const refreshed = await fetch("/api/rankings", { credentials: "include" });
+      const refreshed = await fetch("/api/rankings", {
+        credentials: "include",
+      });
       setAllRankings(await refreshed.json());
       setSaved(true);
     } catch (err) {
@@ -155,7 +170,11 @@ const OlipopRankingPage = () => {
   return (
     <div className="landing-page-container">
       <div className="messsage-board-header">
-        <Button color="outline-secondary" size="sm" onClick={() => navigate("/")}>
+        <Button
+          color="outline-secondary"
+          size="sm"
+          onClick={() => navigate("/")}
+        >
           <BiArrowBack style={{ marginRight: 6 }} />
           Back
         </Button>
@@ -174,19 +193,37 @@ const OlipopRankingPage = () => {
         <div className="my-ranking-panel">
           <div className="panel-heading">
             <h5>My Ranking</h5>
-            <Button size="sm" color="primary" onClick={saveRanking} disabled={saved || saving}>
+            <Button
+              size="sm"
+              color="primary"
+              onClick={saveRanking}
+              disabled={saved || saving}
+            >
               {saving ? "Saving…" : saved ? "Saved" : "Save"}
             </Button>
           </div>
 
           {myRanking.length === 0 ? (
-            <p className="empty-hint">Add flavors below to start your ranking.</p>
+            <p className="empty-hint">
+              Add flavors below to start your ranking.
+            </p>
           ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={myRanking} strategy={verticalListSortingStrategy}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={myRanking}
+                strategy={verticalListSortingStrategy}
+              >
                 <ol className="ranking-list">
                   {myRanking.map((flavor) => (
-                    <SortableItem key={flavor} flavor={flavor} onRemove={removeFlavor} />
+                    <SortableItem
+                      key={flavor}
+                      flavor={flavor}
+                      onRemove={removeFlavor}
+                    />
                   ))}
                 </ol>
               </SortableContext>
@@ -203,17 +240,28 @@ const OlipopRankingPage = () => {
                 onChange={(e) => setCustomFlavor(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomFlavor()}
               />
-              <Button size="sm" color="primary" onClick={addCustomFlavor} disabled={!customFlavor.trim()}>
+              <Button
+                size="sm"
+                color="primary"
+                onClick={addCustomFlavor}
+                disabled={!customFlavor.trim()}
+              >
                 Add
               </Button>
             </div>
             <div className="flavor-chips">
               {unranked.map((flavor) => (
-                <button key={flavor} className="flavor-chip" onClick={() => addFlavor(flavor)}>
+                <button
+                  key={flavor}
+                  className="flavor-chip"
+                  onClick={() => addFlavor(flavor)}
+                >
                   {flavor}
                 </button>
               ))}
-              {unranked.length === 0 && <p className="empty-hint">You've ranked every flavor!</p>}
+              {unranked.length === 0 && (
+                <p className="empty-hint">You've ranked every flavor!</p>
+              )}
             </div>
           </div>
         </div>
@@ -225,7 +273,10 @@ const OlipopRankingPage = () => {
           ) : (
             <div className="all-rankings-grid">
               {allRankings.map(({ username, flavors }) => (
-                <div key={username} className={`user-ranking-card ${username === user?.username ? "own-card" : ""}`}>
+                <div
+                  key={username}
+                  className={`user-ranking-card ${username === user?.username ? "own-card" : ""}`}
+                >
                   <p className="user-ranking-name">{username}</p>
                   <ol className="user-ranking-list">
                     {flavors.map((flavor) => (
