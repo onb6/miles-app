@@ -2,7 +2,16 @@
 
 root * /app/build
 encode gzip
+
+# Proxy API requests to backend
 reverse_proxy /api/* miles-app-server-production.up.railway.app:3001
+
+# Serve static files, but not API routes
+@notapi {
+  not path /api/*
+}
+file_server @notapi
+
+# SPA routing - serve index.html for all other routes
 try_files {path} /index.html
-file_server
 
