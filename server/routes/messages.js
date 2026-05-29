@@ -20,7 +20,9 @@ if (USE_S3) {
   const { S3Client } = require("@aws-sdk/client-s3");
   const s3 = new S3Client({
     region: process.env.BUCKET_REGION,
-    endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
+    endpoint: process.env.BUCKET_ENDPOINT.startsWith("http")
+      ? process.env.BUCKET_ENDPOINT
+      : `https://${process.env.BUCKET_ENDPOINT}`,
     credentials: {
       accessKeyId: process.env.BUCKET_ACCESS_KEY,
       secretAccessKey: process.env.BUCKET_SECRET_KEY,
@@ -250,3 +252,4 @@ router.delete("/:id", requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+
