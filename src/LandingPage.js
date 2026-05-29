@@ -17,14 +17,6 @@ const LandingPage = () => {
   };
   const items = [
     {
-      title: "Olipop Ranking",
-      subtitle: "To keep track of our Olipop ranking!",
-      text: "Coming soooooon :)",
-      buttonText: "Let's Go!",
-      buttonDisabled: true,
-      cardImg: OlipopImg,
-    },
-    {
       title: "Message Board",
       subtitle: "Let's leave each other cute lil notes!",
       text: "Because I'm always thinking about you :)",
@@ -32,6 +24,14 @@ const LandingPage = () => {
       buttonDisabled: false,
       buttonLink: "/messages",
       cardImg: MessageImg,
+    },
+    {
+      title: "Olipop Ranking",
+      subtitle: "To keep track of our Olipop ranking!",
+      text: "Coming soooooon :)",
+      buttonText: "Let's Go!",
+      buttonDisabled: true,
+      cardImg: OlipopImg,
     },
     {
       title: "Another app",

@@ -130,51 +130,85 @@ const MessageBoard = () => {
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
 
       <div className="message-board-content">
-        <Button onClick={() => setAddingMessage(true)} disabled={addingMessage}>
-          Add a message
-        </Button>
-        {addingMessage && (
-          <div className="input-section">
-            <Input
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddMessage()}
-              placeholder="Write a message..."
-            />
-            <div className="image-upload-row">
-              <label className="image-upload-label">
-                Add a photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: "none" }}
-                />
-              </label>
-              {imagePreview && (
-                <div className="image-preview-wrapper">
-                  <img src={imagePreview} alt="preview" className="image-preview" />
-                  <button className="image-remove-btn" onClick={clearImage}>✕</button>
-                </div>
-              )}
-            </div>
-            <Button onClick={handleAddMessage}>Submit</Button>
-            <Button color="secondary" onClick={handleCancel}>
-              Cancel
-            </Button>
-          </div>
-        )}
         {loading ? (
           <p>Loading messages...</p>
         ) : (
-          messages.map((message) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              onEdit={message.user_id === user?.user_id ? handleEditMessage : null}
-              onDelete={message.user_id === user?.user_id ? handleDeleteMessage : null}
-            />
-          ))
+          <div className="masonry-grid">
+            <div className="message-card compose-card">
+              <div className="compose-card-body">
+                Post your message here:
+                <Input
+                  value={messageText}
+                  onChange={(e) => {
+                    setMessageText(e.target.value);
+                    if (!addingMessage) setAddingMessage(true);
+                  }}
+                  onFocus={() => setAddingMessage(true)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddMessage()}
+                  placeholder="Write a message..."
+                />
+                {addingMessage && (
+                  <>
+                    <div className="image-upload-row">
+                      <label className="image-upload-label">
+                        Add a photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          style={{ display: "none" }}
+                        />
+                      </label>
+                      {imagePreview && (
+                        <div className="image-preview-wrapper">
+                          <img
+                            src={imagePreview}
+                            alt="preview"
+                            className="image-preview"
+                          />
+                          <button
+                            className="image-remove-btn"
+                            onClick={clearImage}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="compose-actions">
+                      <Button
+                        size="sm"
+                        color="outline-secondary"
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="primary"
+                        onClick={handleAddMessage}
+                        disabled={messageText === ""}
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            {messages.map((message) => (
+              <MessageItem
+                key={message.id}
+                message={message}
+                onEdit={
+                  message.user_id === user?.user_id ? handleEditMessage : null
+                }
+                onDelete={
+                  message.user_id === user?.user_id ? handleDeleteMessage : null
+                }
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

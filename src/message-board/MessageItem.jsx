@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BsThreeDots, BsThreeDotsVertical } from "react-icons/bs";
 import {
   Card,
   CardBody,
@@ -6,12 +7,17 @@ import {
   CardSubtitle,
   Button,
   Input,
+  Dropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
 } from "reactstrap";
 import "./MessageBoard.css";
 
 const MessageItem = ({ message, onEdit, onDelete }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleSave = async () => {
     if (!editText.trim() || editText === message.content) {
@@ -27,6 +33,8 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
     setEditing(false);
   };
 
+  const canAct = onEdit || onDelete;
+
   return (
     <Card className="message-card">
       {message.image_url && (
@@ -37,10 +45,41 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
         />
       )}
       <CardBody>
-        <CardSubtitle className="text-muted" style={{ fontSize: "0.8rem" }}>
-          {message.author} &middot;{" "}
-          {new Date(message.created_at).toLocaleString()}
-        </CardSubtitle>
+        <div className="message-card-header">
+          <CardSubtitle
+            className="text-muted"
+            style={{ fontSize: "0.8rem", margin: 0 }}
+          >
+            {message.author} &middot;{" "}
+            {new Date(message.created_at).toLocaleString()}
+          </CardSubtitle>
+          {canAct && !editing && (
+            <Dropdown
+              isOpen={menuOpen}
+              toggle={() => setMenuOpen((o) => !o)}
+              direction="down"
+            >
+              <DropdownToggle tag="button" className="ellipsis-btn">
+                <BsThreeDots />
+              </DropdownToggle>
+              <DropdownMenu end>
+                {onEdit && (
+                  <DropdownItem onClick={() => setEditing(true)}>
+                    Edit
+                  </DropdownItem>
+                )}
+                {onDelete && (
+                  <DropdownItem
+                    className="text-danger"
+                    onClick={() => onDelete(message.id)}
+                  >
+                    Delete
+                  </DropdownItem>
+                )}
+              </DropdownMenu>
+            </Dropdown>
+          )}
+        </div>
         {editing ? (
           <div className="edit-section">
             <Input
@@ -52,37 +91,21 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
               }}
             />
             <div className="edit-actions">
-              <Button size="sm" onClick={handleSave}>
-                Save
-              </Button>
-              <Button size="sm" color="secondary" onClick={handleCancel}>
+              <Button
+                size="sm"
+                color="outline-secondary"
+                onClick={handleCancel}
+              >
                 Cancel
+              </Button>
+              <Button size="sm" color="primary" onClick={handleSave}>
+                Save
               </Button>
             </div>
           </div>
         ) : (
           <CardText>{message.content}</CardText>
         )}
-        <div className="message-actions">
-          {onEdit && !editing && (
-            <Button
-              size="sm"
-              color="outline-secondary"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              size="sm"
-              color="danger"
-              onClick={() => onDelete(message.id)}
-            >
-              Delete
-            </Button>
-          )}
-        </div>
       </CardBody>
     </Card>
   );

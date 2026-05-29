@@ -1,3 +1,20 @@
+.btn-primary,
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-color: #286e84;
+  border-color: #286e84;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active {
+  background-color: #1f5567;
+  border-color: #1f5567;
+}
+
 .App {
   text-align: center;
 }
