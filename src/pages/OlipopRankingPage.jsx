@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
-import { BsGripVertical, BsX } from "react-icons/bs";
+import { BsGripVertical, BsX, BsPlus } from "react-icons/bs";
 import { useAuth } from "../context/AuthContext";
 import { Button, Input } from "reactstrap";
 import {
@@ -25,11 +25,11 @@ import "./OlipopRankingPage.css";
 const FLAVORS = [
   "Banana Cream",
   "Blackberry Vanilla",
+  "Cherry Cola",
+  "Cherry Vanilla",
   "Citrus Rush",
   "Classic Grape",
   "Classic Root Beer",
-  "Cherry Cola",
-  "Cherry Vanilla",
   "Cream Soda",
   "Crisp Apple",
   "Doctor Goodwin",
@@ -40,10 +40,10 @@ const FLAVORS = [
   "Orange Squeeze",
   "Peaches & Cream",
   "Pineapple Paradise",
-  "Root Beer",
-  "Strawberry Vanilla",
-  "Shirley Temple",
   "Raspberry Sherbert",
+  "Root Beer",
+  "Shirley Temple",
+  "Strawberry Vanilla",
   "Tropical Punch",
   "Vintage Cola",
   "Watermelon Lime",
@@ -86,6 +86,7 @@ const OlipopRankingPage = () => {
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
   const [customFlavor, setCustomFlavor] = useState("");
 
   const sensors = useSensors(
@@ -100,7 +101,6 @@ const OlipopRankingPage = () => {
       .then((r) => r.json())
       .then(setMyRanking)
       .catch(() => {});
-
     fetch("/api/rankings", { credentials: "include" })
       .then((r) => r.json())
       .then(setAllRankings)
@@ -118,14 +118,11 @@ const OlipopRankingPage = () => {
     setSaved(false);
   };
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+  const handleDragEnd = ({ active, over }) => {
     if (over && active.id !== over.id) {
-      setMyRanking((prev) => {
-        const oldIndex = prev.indexOf(active.id);
-        const newIndex = prev.indexOf(over.id);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
+      setMyRanking((prev) =>
+        arrayMove(prev, prev.indexOf(active.id), prev.indexOf(over.id)),
+      );
       setSaved(false);
     }
   };
@@ -165,7 +162,10 @@ const OlipopRankingPage = () => {
     navigate("/login");
   };
 
-  const unranked = FLAVORS.filter((f) => !myRanking.includes(f));
+  const query = search.toLowerCase();
+  const filteredFlavors = FLAVORS.filter(
+    (f) => !myRanking.includes(f) && f.toLowerCase().includes(query),
+  );
 
   return (
     <div className="landing-page-container">
@@ -190,52 +190,36 @@ const OlipopRankingPage = () => {
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
 
       <div className="ranking-layout">
-        <div className="my-ranking-panel">
-          <div className="panel-heading">
-            <h5>My Ranking</h5>
-            <Button
-              size="sm"
-              color="primary"
-              onClick={saveRanking}
-              disabled={saved || saving}
-            >
-              {saving ? "Saving…" : saved ? "Saved" : "Save"}
-            </Button>
-          </div>
-
-          {myRanking.length === 0 ? (
-            <p className="empty-hint">
-              Add flavors below to start your ranking.
-            </p>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={myRanking}
-                strategy={verticalListSortingStrategy}
-              >
-                <ol className="ranking-list">
-                  {myRanking.map((flavor) => (
-                    <SortableItem
-                      key={flavor}
-                      flavor={flavor}
-                      onRemove={removeFlavor}
-                    />
-                  ))}
-                </ol>
-              </SortableContext>
-            </DndContext>
-          )}
-
-          <div className="flavor-picker">
-            <p className="picker-label">Add a flavor:</p>
+        {/* Left half: picker + my ranking combined */}
+        <div className="combined-panel">
+          <div className="combined-col">
+            <h5 className="panel-title">All Flavors</h5>
+            <Input
+              bsSize="sm"
+              placeholder="Search flavors…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flavor-search"
+            />
+            <ul className="flavor-list">
+              {filteredFlavors.map((flavor) => (
+                <li
+                  key={flavor}
+                  className="flavor-list-item"
+                  onClick={() => addFlavor(flavor)}
+                >
+                  <span>{flavor}</span>
+                  <BsPlus className="flavor-add-icon" />
+                </li>
+              ))}
+              {filteredFlavors.length === 0 && (
+                <li className="flavor-list-empty">No flavors match</li>
+              )}
+            </ul>
             <div className="custom-flavor-row">
               <Input
                 bsSize="sm"
-                placeholder="Can't find yours? Type it here…"
+                placeholder="Add unlisted flavor…"
                 value={customFlavor}
                 onChange={(e) => setCustomFlavor(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomFlavor()}
@@ -249,40 +233,77 @@ const OlipopRankingPage = () => {
                 Add
               </Button>
             </div>
-            <div className="flavor-chips">
-              {unranked.map((flavor) => (
-                <button
-                  key={flavor}
-                  className="flavor-chip"
-                  onClick={() => addFlavor(flavor)}
-                >
-                  {flavor}
-                </button>
-              ))}
-              {unranked.length === 0 && (
-                <p className="empty-hint">You've ranked every flavor!</p>
-              )}
+          </div>
+
+          <div className="combined-divider" />
+
+          <div className="combined-col">
+            <div className="panel-heading">
+              <h5 className="panel-title">Edit My Ranking</h5>
+              <Button
+                size="sm"
+                color="primary"
+                onClick={saveRanking}
+                disabled={saved || saving}
+              >
+                {saving ? "Saving…" : saved ? "Saved" : "Save"}
+              </Button>
             </div>
+            {myRanking.length === 0 ? (
+              <p className="empty-hint">
+                Pick flavors from the list to start ranking.
+              </p>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={myRanking}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ol className="ranking-list">
+                    {myRanking.map((flavor) => (
+                      <SortableItem
+                        key={flavor}
+                        flavor={flavor}
+                        onRemove={removeFlavor}
+                      />
+                    ))}
+                  </ol>
+                </SortableContext>
+              </DndContext>
+            )}
           </div>
         </div>
 
+        {/* Right half: everyone's rankings */}
         <div className="all-rankings-panel">
-          <h5>Everyone's Rankings</h5>
+          <h5 className="panel-title">Compare Rankings</h5>
           {allRankings.length === 0 ? (
             <p className="empty-hint">No one has ranked yet — be the first!</p>
           ) : (
             <div className="all-rankings-grid">
-              {allRankings.map(({ username, flavors }) => (
-                <div
-                  key={username}
-                  className={`user-ranking-card ${username === user?.username ? "own-card" : ""}`}
-                >
-                  <p className="user-ranking-name">{username}</p>
-                  <ol className="user-ranking-list">
-                    {flavors.map((flavor) => (
-                      <li key={flavor}>{flavor}</li>
+              {allRankings.slice(0, 2).map(({ username, flavors }) => (
+                <div key={username} className={"user-ranking-card"}>
+                  <p className="user-ranking-name">{username + "'s Ranking"}</p>
+                  <ul className="user-ranking-list">
+                    {flavors.map((flavor, i) => (
+                      <li key={flavor} className={i < 3 ? "top-rank" : ""}>
+                        <span className="rank-medal">
+                          {i === 0
+                            ? "🥇"
+                            : i === 1
+                              ? "🥈"
+                              : i === 2
+                                ? "🥉"
+                                : `${i + 1}.`}
+                        </span>
+                        {flavor}
+                      </li>
                     ))}
-                  </ol>
+                  </ul>
                 </div>
               ))}
             </div>

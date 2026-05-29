@@ -8,18 +8,19 @@ const router = express.Router();
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT u.username, r.flavor, r.position
+      SELECT u.username, r.flavor, r.position,
+             MAX(r.created_at) OVER (PARTITION BY r.user_id) AS last_updated
       FROM olipop_rankings r
       JOIN users u ON r.user_id = u.id
-      ORDER BY u.username, r.position
+      ORDER BY last_updated DESC, r.position
     `);
 
-    const byUser = {};
+    const seen = new Map();
     for (const row of rows) {
-      if (!byUser[row.username]) byUser[row.username] = [];
-      byUser[row.username].push(row.flavor);
+      if (!seen.has(row.username)) seen.set(row.username, []);
+      seen.get(row.username).push(row.flavor);
     }
-    res.json(Object.entries(byUser).map(([username, flavors]) => ({ username, flavors })));
+    res.json([...seen.entries()].map(([username, flavors]) => ({ username, flavors })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch rankings" });
