@@ -1,4 +1,4 @@
-:3000
+:8080
 
 root * /app/build
 encode gzip
