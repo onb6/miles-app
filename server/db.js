@@ -52,6 +52,18 @@ const initDb = async () => {
     ALTER TABLE messages
       ADD COLUMN IF NOT EXISTS image_url TEXT
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS olipop_rankings (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      flavor     TEXT NOT NULL,
+      position   INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, flavor),
+      UNIQUE(user_id, position)
+    )
+  `);
 };
 
 module.exports = { pool, initDb };

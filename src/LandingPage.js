@@ -28,9 +28,10 @@ const LandingPage = () => {
     {
       title: "Olipop Ranking",
       subtitle: "To keep track of our Olipop ranking!",
-      text: "Coming soooooon :)",
+      text: "Rank your favourite flavors!",
       buttonText: "Let's Go!",
-      buttonDisabled: true,
+      buttonDisabled: false,
+      buttonLink: "/olipop",
       cardImg: OlipopImg,
     },
     {

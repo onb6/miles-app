@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import LandingPage from "./LandingPage";
 import MessageBoard from "./message-board/MessageBoard";
 import AuthPage from "./pages/AuthPage";
+import OlipopRankingPage from "./pages/OlipopRankingPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -31,6 +32,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MessageBoard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/olipop"
+            element={
+              <ProtectedRoute>
+                <OlipopRankingPage />
               </ProtectedRoute>
             }
           />

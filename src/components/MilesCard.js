@@ -1,28 +1,28 @@
 import { Card, CardBody, CardTitle, CardSubtitle, Button } from "reactstrap";
 import "./MilesCard.css";
 
-const MilesCard = (content) => {
+const MilesCard = ({ content }) => {
   return (
     <Card className="miles-card">
       <img
         className="miles-card-img"
-        alt={content.content.title}
-        src={content.content.cardImg || "https://picsum.photos/300/200"}
+        alt={content.title}
+        src={content.cardImg || "https://picsum.photos/300/200"}
       />
       <CardBody>
         <CardTitle className="miles-card-title" tag="h5">
-          {content.content.title}
+          {content.title}
         </CardTitle>
         <CardSubtitle className="mb-2 text-muted" tag="h6">
-          {content.content.subtitle}
+          {content.subtitle}
         </CardSubtitle>
         <Button
-          disabled={content.content.buttonDisabled}
-          href={content.content.buttonLink}
+          disabled={content.buttonDisabled}
+          href={content.buttonLink}
           tag="a"
           color="primary"
         >
-          {content.content.buttonText}
+          {content.buttonText}
         </Button>
       </CardBody>
     </Card>
