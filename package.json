@@ -1,6 +1,5 @@
 {
   "name": "for-miles",
-  "homepage": "https://onb6.github.io/miles-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -45,3 +44,4 @@
   },
   "proxy": "http://localhost:3001"
 }
+
