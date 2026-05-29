@@ -39,11 +39,9 @@ if (fs.existsSync(buildDir)) {
   app.get("*", (req, res) => res.sendFile(path.join(buildDir, "index.html")));
 }
 
-initDb()
-  .then(() => {
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error("Failed to initialize database:", err);
-    process.exit(1);
-  });
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  initDb()
+    .then(() => console.log("Database initialized"))
+    .catch((err) => console.error("Failed to initialize database:", err));
+});

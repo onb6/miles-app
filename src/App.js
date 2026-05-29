@@ -18,7 +18,14 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<AuthPage />} />
-          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <LandingPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/messages"
             element={
