@@ -11,6 +11,9 @@ const authRouter = require("./routes/auth");
 const messagesRouter = require("./routes/messages");
 const rankingsRouter = require("./routes/rankings");
 
+const uploadsDir = path.join(__dirname, "uploads");
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -22,6 +25,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+app.use("/uploads", express.static(uploadsDir));
 app.use("/api/auth", authRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/rankings", rankingsRouter);
