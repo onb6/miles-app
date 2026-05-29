@@ -20,6 +20,7 @@ const MilesCard = (content) => {
           disabled={content.content.buttonDisabled}
           href={content.content.buttonLink}
           tag="a"
+          color="primary"
         >
           {content.content.buttonText}
         </Button>
