@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BsThreeDots, BsThreeDotsVertical } from "react-icons/bs";
+import { BsThreeDots } from "react-icons/bs";
 import {
   Card,
   CardBody,
