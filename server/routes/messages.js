@@ -30,7 +30,7 @@ if (USE_S3) {
   storage = multerS3({
     s3,
     bucket: process.env.BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
+    contentType: (_req, file, cb) => cb(null, file.mimetype),
     key: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
       cb(null, `${crypto.randomUUID()}${ext}`);
