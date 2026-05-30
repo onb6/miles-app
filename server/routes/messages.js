@@ -30,6 +30,7 @@ if (USE_S3) {
   storage = multerS3({
     s3,
     bucket: process.env.BUCKET_NAME,
+    acl: "public-read",
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
@@ -73,7 +74,7 @@ const upload = multer({
 router.get("/", async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM messages ORDER BY created_at DESC"
+      "SELECT * FROM messages ORDER BY created_at DESC",
     );
     res.json(rows);
   } catch (err) {
@@ -133,7 +134,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   try {
     const { rows } = await pool.query(
       "INSERT INTO messages (content, user_id, author, image_url) VALUES ($1, $2, $3, $4) RETURNING *",
-      [content.trim(), req.user.user_id, req.user.username, imageUrl]
+      [content.trim(), req.user.user_id, req.user.username, imageUrl],
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -195,7 +196,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
   try {
     const { rows, rowCount } = await pool.query(
       "UPDATE messages SET content = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
-      [content.trim(), id, req.user.user_id]
+      [content.trim(), id, req.user.user_id],
     );
     if (rowCount === 0)
       return res.status(404).json({ error: "Message not found or not yours" });
@@ -238,7 +239,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       "DELETE FROM messages WHERE id = $1 AND user_id = $2",
-      [id, req.user.user_id]
+      [id, req.user.user_id],
     );
     if (rowCount === 0)
       return res.status(404).json({ error: "Message not found or not yours" });
