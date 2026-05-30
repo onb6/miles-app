@@ -7,49 +7,17 @@ const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
-const USE_S3 = !!(
-  process.env.BUCKET_ENDPOINT &&
-  process.env.BUCKET_NAME &&
-  process.env.BUCKET_ACCESS_KEY &&
-  process.env.BUCKET_SECRET_KEY
-);
-
-let storage;
-if (USE_S3) {
-  const multerS3 = require("multer-s3");
-  const { S3Client } = require("@aws-sdk/client-s3");
-  const s3 = new S3Client({
-    region: process.env.BUCKET_REGION,
-    endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
-    credentials: {
-      accessKeyId: process.env.BUCKET_ACCESS_KEY,
-      secretAccessKey: process.env.BUCKET_SECRET_KEY,
-    },
-    forcePathStyle: true,
-  });
-  storage = multerS3({
-    s3,
-    bucket: process.env.BUCKET_NAME,
-    acl: "public-read",
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    key: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
-} else {
-  storage = multer.diskStorage({
-    destination: path.join(__dirname, "../uploads"),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
-}
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, "../uploads"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${crypto.randomUUID()}${ext}`);
+  },
+});
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     cb(null, allowed.includes(file.mimetype));
@@ -125,11 +93,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
-  const imageUrl = req.file
-    ? USE_S3
-      ? `https://${process.env.BUCKET_ENDPOINT}/${process.env.BUCKET_NAME}/${req.file.key}`
-      : `/uploads/${req.file.filename}`
-    : null;
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     const { rows } = await pool.query(
