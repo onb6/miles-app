@@ -126,11 +126,17 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
-  const imageUrl = req.file
-    ? USE_S3
-      ? `https://${process.env.BUCKET_ENDPOINT}/${process.env.BUCKET_NAME}/${req.file.key}`
-      : `/uploads/${req.file.filename}`
-    : null;
+  let imageUrl = null;
+  if (req.file) {
+    if (USE_S3) {
+      const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
+        ? process.env.BUCKET_ENDPOINT
+        : `https://${process.env.BUCKET_ENDPOINT}`;
+      imageUrl = `${endpoint}/${process.env.BUCKET_NAME}/${req.file.key}`;
+    } else {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+  }
 
   try {
     const { rows } = await pool.query(
