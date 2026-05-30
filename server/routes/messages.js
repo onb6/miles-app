@@ -20,11 +20,18 @@ let s3Client;
 
 if (USE_S3) {
   const multerS3 = require("multer-s3");
+  
+  // Normalize endpoint - remove https:// if present, we'll add it back
+  let endpoint = process.env.BUCKET_ENDPOINT;
+  if (endpoint.startsWith("https://")) {
+    endpoint = endpoint.slice(8);
+  } else if (endpoint.startsWith("http://")) {
+    endpoint = endpoint.slice(7);
+  }
+  
   s3Client = new S3Client({
     region: process.env.BUCKET_REGION,
-    endpoint: process.env.BUCKET_ENDPOINT.startsWith("http")
-      ? process.env.BUCKET_ENDPOINT
-      : `https://${process.env.BUCKET_ENDPOINT}`,
+    endpoint: `https://${endpoint}`,
     credentials: {
       accessKeyId: process.env.BUCKET_ACCESS_KEY,
       secretAccessKey: process.env.BUCKET_SECRET_KEY,
@@ -144,10 +151,14 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
         console.warn("Failed to set ACL, continuing anyway:", aclErr.message);
       }
 
-      const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
-        ? process.env.BUCKET_ENDPOINT
-        : `https://${process.env.BUCKET_ENDPOINT}`;
-      imageUrl = `${endpoint}/${process.env.BUCKET_NAME}/${req.file.key}`;
+      // Normalize endpoint for URL construction
+      let endpoint = process.env.BUCKET_ENDPOINT;
+      if (endpoint.startsWith("https://")) {
+        endpoint = endpoint.slice(8);
+      } else if (endpoint.startsWith("http://")) {
+        endpoint = endpoint.slice(7);
+      }
+      imageUrl = `https://${endpoint}/${process.env.BUCKET_NAME}/${req.file.key}`;
     } else {
       imageUrl = `/uploads/${req.file.filename}`;
     }
