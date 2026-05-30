@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const multer = require("multer");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
+const { S3Client, PutObjectAclCommand } = require("@aws-sdk/client-s3");
 
 const router = express.Router();
 
@@ -15,10 +16,11 @@ const USE_S3 = !!(
 );
 
 let storage;
+let s3Client;
+
 if (USE_S3) {
   const multerS3 = require("multer-s3");
-  const { S3Client } = require("@aws-sdk/client-s3");
-  const s3 = new S3Client({
+  s3Client = new S3Client({
     region: process.env.BUCKET_REGION,
     endpoint: process.env.BUCKET_ENDPOINT.startsWith("http")
       ? process.env.BUCKET_ENDPOINT
@@ -30,9 +32,8 @@ if (USE_S3) {
     forcePathStyle: true,
   });
   storage = multerS3({
-    s3,
+    s3: s3Client,
     bucket: process.env.BUCKET_NAME,
-    acl: "public-read",
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
@@ -130,6 +131,19 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   let imageUrl = null;
   if (req.file) {
     if (USE_S3) {
+      // Try to set ACL to public-read after upload
+      try {
+        await s3Client.send(
+          new PutObjectAclCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Key: req.file.key,
+            ACL: "public-read",
+          })
+        );
+      } catch (aclErr) {
+        console.warn("Failed to set ACL, continuing anyway:", aclErr.message);
+      }
+
       const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
         ? process.env.BUCKET_ENDPOINT
         : `https://${process.env.BUCKET_ENDPOINT}`;
