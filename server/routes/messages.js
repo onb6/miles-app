@@ -21,32 +21,52 @@ let s3Client;
 if (USE_S3) {
   const multerS3 = require("multer-s3");
   
-  // Normalize endpoint - remove https:// if present, we'll add it back
-  let endpoint = process.env.BUCKET_ENDPOINT;
-  if (endpoint.startsWith("https://")) {
-    endpoint = endpoint.slice(8);
-  } else if (endpoint.startsWith("http://")) {
-    endpoint = endpoint.slice(7);
+  try {
+    // Normalize endpoint - remove https:// or http:// if present
+    let endpoint = process.env.BUCKET_ENDPOINT || "";
+    console.log("Raw BUCKET_ENDPOINT:", endpoint);
+    
+    if (endpoint.startsWith("https://")) {
+      endpoint = endpoint.slice(8);
+    } else if (endpoint.startsWith("http://")) {
+      endpoint = endpoint.slice(7);
+    }
+    
+    console.log("Normalized endpoint:", endpoint);
+    
+    const finalEndpoint = `https://${endpoint}`;
+    console.log("Final endpoint URL:", finalEndpoint);
+    
+    s3Client = new S3Client({
+      region: process.env.BUCKET_REGION,
+      endpoint: finalEndpoint,
+      credentials: {
+        accessKeyId: process.env.BUCKET_ACCESS_KEY,
+        secretAccessKey: process.env.BUCKET_SECRET_KEY,
+      },
+      forcePathStyle: true,
+    });
+    
+    storage = multerS3({
+      s3: s3Client,
+      bucket: process.env.BUCKET_NAME,
+      contentType: multerS3.AUTO_CONTENT_TYPE,
+      key: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `${crypto.randomUUID()}${ext}`);
+      },
+    });
+  } catch (err) {
+    console.error("Failed to initialize S3:", err);
+    // Fall back to disk storage
+    storage = multer.diskStorage({
+      destination: path.join(__dirname, "../uploads"),
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `${crypto.randomUUID()}${ext}`);
+      },
+    });
   }
-  
-  s3Client = new S3Client({
-    region: process.env.BUCKET_REGION,
-    endpoint: `https://${endpoint}`,
-    credentials: {
-      accessKeyId: process.env.BUCKET_ACCESS_KEY,
-      secretAccessKey: process.env.BUCKET_SECRET_KEY,
-    },
-    forcePathStyle: true,
-  });
-  storage = multerS3({
-    s3: s3Client,
-    bucket: process.env.BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    key: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
 } else {
   storage = multer.diskStorage({
     destination: path.join(__dirname, "../uploads"),
@@ -137,7 +157,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
 
   let imageUrl = null;
   if (req.file) {
-    if (USE_S3) {
+    if (USE_S3 && s3Client) {
       // Try to set ACL to public-read after upload
       try {
         await s3Client.send(
@@ -152,7 +172,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
       }
 
       // Normalize endpoint for URL construction
-      let endpoint = process.env.BUCKET_ENDPOINT;
+      let endpoint = process.env.BUCKET_ENDPOINT || "";
       if (endpoint.startsWith("https://")) {
         endpoint = endpoint.slice(8);
       } else if (endpoint.startsWith("http://")) {
