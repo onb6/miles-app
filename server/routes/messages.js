@@ -14,11 +14,11 @@ const USE_S3 = !!(
   process.env.BUCKET_SECRET_KEY
 );
 
-let storage;
+let s3, storage;
 if (USE_S3) {
   const multerS3 = require("multer-s3");
   const { S3Client } = require("@aws-sdk/client-s3");
-  const s3 = new S3Client({
+  s3 = new S3Client({
     region: process.env.BUCKET_REGION,
     endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
     credentials: {
@@ -30,7 +30,6 @@ if (USE_S3) {
   storage = multerS3({
     s3,
     bucket: process.env.BUCKET_NAME,
-    acl: "public-read",
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
@@ -46,6 +45,23 @@ if (USE_S3) {
     },
   });
 }
+
+// Proxy S3 files through the server so the bucket doesn't need public access
+router.get("/uploads/:key", async (req, res) => {
+  if (!USE_S3) return res.status(404).json({ error: "Not found" });
+  try {
+    const { GetObjectCommand } = require("@aws-sdk/client-s3");
+    const response = await s3.send(
+      new GetObjectCommand({ Bucket: process.env.BUCKET_NAME, Key: req.params.key })
+    );
+    res.set("Content-Type", response.ContentType);
+    res.set("Cache-Control", "public, max-age=31536000, immutable");
+    response.Body.pipe(res);
+  } catch (err) {
+    console.error(err);
+    res.status(404).json({ error: "File not found" });
+  }
+});
 
 const upload = multer({
   storage,
@@ -127,7 +143,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
 
   const imageUrl = req.file
     ? USE_S3
-      ? `https://${process.env.BUCKET_ENDPOINT}/${process.env.BUCKET_NAME}/${req.file.key}`
+      ? `/api/messages/uploads/${req.file.key}`
       : `/uploads/${req.file.filename}`
     : null;
 
