@@ -20,7 +20,9 @@ if (USE_S3) {
   const { S3Client } = require("@aws-sdk/client-s3");
   const s3 = new S3Client({
     region: process.env.BUCKET_REGION,
-    endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
+    endpoint: process.env.BUCKET_ENDPOINT.startsWith("http")
+      ? process.env.BUCKET_ENDPOINT
+      : `https://${process.env.BUCKET_ENDPOINT}`,
     credentials: {
       accessKeyId: process.env.BUCKET_ACCESS_KEY,
       secretAccessKey: process.env.BUCKET_SECRET_KEY,
@@ -74,7 +76,7 @@ const upload = multer({
 router.get("/", async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM messages ORDER BY created_at DESC",
+      "SELECT * FROM messages ORDER BY created_at DESC"
     );
     res.json(rows);
   } catch (err) {
@@ -125,16 +127,22 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
-  const imageUrl = req.file
-    ? USE_S3
-      ? `https://${process.env.BUCKET_ENDPOINT}/${process.env.BUCKET_NAME}/${req.file.key}`
-      : `/uploads/${req.file.filename}`
-    : null;
+  let imageUrl = null;
+  if (req.file) {
+    if (USE_S3) {
+      const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
+        ? process.env.BUCKET_ENDPOINT
+        : `https://${process.env.BUCKET_ENDPOINT}`;
+      imageUrl = `${endpoint}/${process.env.BUCKET_NAME}/${req.file.key}`;
+    } else {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+  }
 
   try {
     const { rows } = await pool.query(
       "INSERT INTO messages (content, user_id, author, image_url) VALUES ($1, $2, $3, $4) RETURNING *",
-      [content.trim(), req.user.user_id, req.user.username, imageUrl],
+      [content.trim(), req.user.user_id, req.user.username, imageUrl]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -196,7 +204,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
   try {
     const { rows, rowCount } = await pool.query(
       "UPDATE messages SET content = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
-      [content.trim(), id, req.user.user_id],
+      [content.trim(), id, req.user.user_id]
     );
     if (rowCount === 0)
       return res.status(404).json({ error: "Message not found or not yours" });
@@ -239,7 +247,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       "DELETE FROM messages WHERE id = $1 AND user_id = $2",
-      [id, req.user.user_id],
+      [id, req.user.user_id]
     );
     if (rowCount === 0)
       return res.status(404).json({ error: "Message not found or not yours" });
@@ -251,3 +259,4 @@ router.delete("/:id", requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+
