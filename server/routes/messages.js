@@ -55,7 +55,10 @@ router.get("/uploads/:key", async (req, res) => {
   try {
     const { GetObjectCommand } = require("@aws-sdk/client-s3");
     const response = await s3.send(
-      new GetObjectCommand({ Bucket: process.env.BUCKET_NAME, Key: req.params.key })
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: req.params.key,
+      }),
     );
     res.set("Content-Type", response.ContentType);
     res.set("Cache-Control", "public, max-age=31536000, immutable");
@@ -68,7 +71,7 @@ router.get("/uploads/:key", async (req, res) => {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     cb(null, allowed.includes(file.mimetype));
@@ -141,7 +144,7 @@ router.get("/", async (req, res) => {
  */
 router.post("/", requireAuth, async (req, res) => {
   await new Promise((resolve, reject) =>
-    upload.single("image")(req, res, (err) => (err ? reject(err) : resolve()))
+    upload.single("image")(req, res, (err) => (err ? reject(err) : resolve())),
   ).catch((err) => {
     console.error("Upload error:", err);
     return res.status(500).json({ error: err.message || "Upload failed" });
