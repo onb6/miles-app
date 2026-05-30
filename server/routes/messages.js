@@ -4,78 +4,17 @@ const crypto = require("crypto");
 const multer = require("multer");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
-const { S3Client, PutObjectAclCommand } = require("@aws-sdk/client-s3");
 
 const router = express.Router();
 
-const USE_S3 = !!(
-  process.env.BUCKET_ENDPOINT &&
-  process.env.BUCKET_NAME &&
-  process.env.BUCKET_ACCESS_KEY &&
-  process.env.BUCKET_SECRET_KEY
-);
-
-let storage;
-let s3Client;
-
-if (USE_S3) {
-  const multerS3 = require("multer-s3");
-  
-  try {
-    // Normalize endpoint - remove https:// or http:// if present
-    let endpoint = process.env.BUCKET_ENDPOINT || "";
-    console.log("Raw BUCKET_ENDPOINT:", endpoint);
-    
-    if (endpoint.startsWith("https://")) {
-      endpoint = endpoint.slice(8);
-    } else if (endpoint.startsWith("http://")) {
-      endpoint = endpoint.slice(7);
-    }
-    
-    console.log("Normalized endpoint:", endpoint);
-    
-    const finalEndpoint = `https://${endpoint}`;
-    console.log("Final endpoint URL:", finalEndpoint);
-    
-    s3Client = new S3Client({
-      region: process.env.BUCKET_REGION,
-      endpoint: finalEndpoint,
-      credentials: {
-        accessKeyId: process.env.BUCKET_ACCESS_KEY,
-        secretAccessKey: process.env.BUCKET_SECRET_KEY,
-      },
-      forcePathStyle: true,
-    });
-    
-    storage = multerS3({
-      s3: s3Client,
-      bucket: process.env.BUCKET_NAME,
-      contentType: multerS3.AUTO_CONTENT_TYPE,
-      key: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, `${crypto.randomUUID()}${ext}`);
-      },
-    });
-  } catch (err) {
-    console.error("Failed to initialize S3:", err);
-    // Fall back to disk storage
-    storage = multer.diskStorage({
-      destination: path.join(__dirname, "../uploads"),
-      filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, `${crypto.randomUUID()}${ext}`);
-      },
-    });
-  }
-} else {
-  storage = multer.diskStorage({
-    destination: path.join(__dirname, "../uploads"),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
-}
+// Always use local disk storage for now - S3 endpoint configuration is problematic
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, "../uploads"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${crypto.randomUUID()}${ext}`);
+  },
+});
 
 const upload = multer({
   storage,
@@ -155,34 +94,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
-  let imageUrl = null;
-  if (req.file) {
-    if (USE_S3 && s3Client) {
-      // Try to set ACL to public-read after upload
-      try {
-        await s3Client.send(
-          new PutObjectAclCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key: req.file.key,
-            ACL: "public-read",
-          })
-        );
-      } catch (aclErr) {
-        console.warn("Failed to set ACL, continuing anyway:", aclErr.message);
-      }
-
-      // Normalize endpoint for URL construction
-      let endpoint = process.env.BUCKET_ENDPOINT || "";
-      if (endpoint.startsWith("https://")) {
-        endpoint = endpoint.slice(8);
-      } else if (endpoint.startsWith("http://")) {
-        endpoint = endpoint.slice(7);
-      }
-      imageUrl = `https://${endpoint}/${process.env.BUCKET_NAME}/${req.file.key}`;
-    } else {
-      imageUrl = `/uploads/${req.file.filename}`;
-    }
-  }
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     const { rows } = await pool.query(
