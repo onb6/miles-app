@@ -18,9 +18,12 @@ let s3, storage;
 if (USE_S3) {
   const multerS3 = require("multer-s3");
   const { S3Client } = require("@aws-sdk/client-s3");
+  const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
+    ? process.env.BUCKET_ENDPOINT
+    : `https://${process.env.BUCKET_ENDPOINT}`;
   s3 = new S3Client({
     region: process.env.BUCKET_REGION,
-    endpoint: `https://${process.env.BUCKET_ENDPOINT}`,
+    endpoint,
     credentials: {
       accessKeyId: process.env.BUCKET_ACCESS_KEY,
       secretAccessKey: process.env.BUCKET_SECRET_KEY,
