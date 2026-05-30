@@ -136,7 +136,15 @@ router.get("/", async (req, res) => {
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post("/", requireAuth, upload.single("image"), async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
+  await new Promise((resolve, reject) =>
+    upload.single("image")(req, res, (err) => (err ? reject(err) : resolve()))
+  ).catch((err) => {
+    console.error("Upload error:", err);
+    return res.status(500).json({ error: err.message || "Upload failed" });
+  });
+  if (res.headersSent) return;
+
   const { content } = req.body;
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
