@@ -57,6 +57,25 @@
   border-radius: 16px;
 }
 
+.message-card-new {
+  border-color: #286e84;
+}
+
+.message-card-active {
+  outline: 2px solid #286e84;
+  outline-offset: 3px;
+}
+
+.new-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  background: #286e84;
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
 .compose-card {
   border: 1px solid rgba(40, 110, 132, 0.2);
   background: #daedf2;
@@ -150,6 +169,43 @@
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.reply-btn {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  margin-top: 6px;
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 4px;
+}
+
+.reply-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #286e84;
+}
+
+.reply-btn-unread {
+  font-weight: 700;
+  color: #286e84;
+}
+
+.reply-unread-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #286e84;
+  flex-shrink: 0;
+}
+
+.reply-count {
+  font-weight: 600;
 }
 
 .image-remove-btn {

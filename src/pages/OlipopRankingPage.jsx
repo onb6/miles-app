@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 import { BsGripVertical, BsX, BsPlus } from "react-icons/bs";
@@ -22,34 +22,110 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import "./OlipopRankingPage.css";
 
+const CDN = "https://drinkolipop.com/cdn/shop/files";
 const FLAVORS = [
-  "Banana Cream",
-  "Blackberry Vanilla",
-  "Cherry Cola",
-  "Cherry Vanilla",
-  "Citrus Rush",
-  "Classic Grape",
-  "Classic Root Beer",
-  "Cream Soda",
-  "Crisp Apple",
-  "Doctor Goodwin",
-  "Ginger Ale",
-  "Ginger Lemon",
-  "Lemon Lime",
-  "Orange Cream",
-  "Orange Squeeze",
-  "Peaches & Cream",
-  "Pineapple Paradise",
-  "Raspberry Sherbert",
-  "Root Beer",
-  "Shirley Temple",
-  "Strawberry Vanilla",
-  "Tropical Punch",
-  "Vintage Cola",
-  "Watermelon Lime",
+  {
+    name: "Banana Cream",
+    img: `${CDN}/banana-cream-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Blackberry Vanilla",
+    img: `${CDN}/blackberry-vanilla-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Cherry Cola",
+    img: `${CDN}/cherry-cola-9g-olipop_gallery-main-image_new_asset.webp`,
+  },
+  {
+    name: "Cherry Vanilla",
+    img: `${CDN}/cherry-vanilla-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Citrus Rush",
+    img: `${CDN}/citrus-rush-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Classic Grape",
+    img: `${CDN}/classic-grape-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Classic Root Beer",
+    img: `${CDN}/classic-root-beer-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Cream Soda",
+    img: `${CDN}/cream-soda-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Crisp Apple",
+    img: `${CDN}/crisp-apple-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Doctor Goodwin",
+    img: `${CDN}/doctor-goodwin-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Ginger Ale",
+    img: `${CDN}/ginger-ale-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Ginger Lemon",
+    img: `${CDN}/ginger-lemon-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Lemon Lime",
+    img: `${CDN}/lemon-lime-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Orange Cream",
+    img: `${CDN}/orange-cream-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Orange Squeeze",
+    img: `${CDN}/orange-squeeze-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Peaches & Cream",
+    img: `${CDN}/peaches-and-cream-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Pineapple Paradise",
+    img: `${CDN}/Pineapple-Paradise_cgi-main-image_072925.webp`,
+  },
+  {
+    name: "Raspberry Sherbert",
+    img: `${CDN}/raspberry-sherbert_omni-pdp_single.webp`,
+  },
+  {
+    name: "Shirley Temple",
+    img: `${CDN}/shirley-temple-6g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Strawberry Vanilla",
+    img: `${CDN}/strawberry-vanilla-9g-olipop_gallery-main-image_new_asset.webp`,
+  },
+  {
+    name: "Tropical Punch",
+    img: `${CDN}/tropical-punch-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Vintage Cola",
+    img: `${CDN}/vintage-cola-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
+  {
+    name: "Watermelon Lime",
+    img: `${CDN}/watermelon-lime-9g-olipop_gallery-image_single-can_new_asset.webp`,
+  },
 ];
 
-const SortableItem = ({ flavor, onRemove }) => {
+const FLAVOR_IMG = Object.fromEntries(FLAVORS.map((f) => [f.name, f.img]));
+
+const SortableItem = ({
+  flavor,
+  onRemove,
+  onCanMouseEnter,
+  onCanMouseLeave,
+}) => {
   const {
     attributes,
     listeners,
@@ -70,6 +146,17 @@ const SortableItem = ({ flavor, onRemove }) => {
       <button className="drag-handle" {...attributes} {...listeners}>
         <BsGripVertical />
       </button>
+      {FLAVOR_IMG[flavor] ? (
+        <img
+          src={FLAVOR_IMG[flavor]}
+          alt={flavor}
+          className="flavor-can-img"
+          onMouseEnter={(e) => onCanMouseEnter(e, FLAVOR_IMG[flavor])}
+          onMouseLeave={onCanMouseLeave}
+        />
+      ) : (
+        <span className="flavor-can-placeholder">?</span>
+      )}
       <span className="ranking-label">{flavor}</span>
       <button className="rank-btn remove-btn" onClick={() => onRemove(flavor)}>
         <BsX />
@@ -88,6 +175,21 @@ const OlipopRankingPage = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [customFlavor, setCustomFlavor] = useState("");
+  const [tooltip, setTooltip] = useState(null);
+  const tooltipTimer = useRef(null);
+
+  const showTooltip = (e, img) => {
+    clearTimeout(tooltipTimer.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    tooltipTimer.current = setTimeout(() => {
+      setTooltip({ img, x: rect.right + 12, y: rect.top + rect.height / 2 });
+    }, 250);
+  };
+
+  const hideTooltip = () => {
+    clearTimeout(tooltipTimer.current);
+    setTooltip(null);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -164,7 +266,7 @@ const OlipopRankingPage = () => {
 
   const query = search.toLowerCase();
   const filteredFlavors = FLAVORS.filter(
-    (f) => !myRanking.includes(f) && f.toLowerCase().includes(query),
+    (f) => !myRanking.includes(f.name) && f.name.toLowerCase().includes(query),
   );
 
   return (
@@ -202,13 +304,20 @@ const OlipopRankingPage = () => {
               className="flavor-search"
             />
             <ul className="flavor-list">
-              {filteredFlavors.map((flavor) => (
+              {filteredFlavors.map((f) => (
                 <li
-                  key={flavor}
+                  key={f.name}
                   className="flavor-list-item"
-                  onClick={() => addFlavor(flavor)}
+                  onClick={() => addFlavor(f.name)}
                 >
-                  <span>{flavor}</span>
+                  <img
+                    src={f.img}
+                    alt={f.name}
+                    className="flavor-can-img"
+                    onMouseEnter={(e) => showTooltip(e, f.img)}
+                    onMouseLeave={hideTooltip}
+                  />
+                  <span>{f.name}</span>
                   <BsPlus className="flavor-add-icon" />
                 </li>
               ))}
@@ -269,6 +378,8 @@ const OlipopRankingPage = () => {
                         key={flavor}
                         flavor={flavor}
                         onRemove={removeFlavor}
+                        onCanMouseEnter={showTooltip}
+                        onCanMouseLeave={hideTooltip}
                       />
                     ))}
                   </ol>
@@ -286,30 +397,94 @@ const OlipopRankingPage = () => {
           ) : (
             <div className="all-rankings-grid">
               {allRankings.slice(0, 2).map(({ username, flavors }) => (
-                <div key={username} className={"user-ranking-card"}>
-                  <p className="user-ranking-name">{username + "'s Ranking"}</p>
-                  <ul className="user-ranking-list">
-                    {flavors.map((flavor, i) => (
-                      <li key={flavor} className={i < 3 ? "top-rank" : ""}>
-                        <span className="rank-medal">
-                          {i === 0
-                            ? "🥇"
-                            : i === 1
-                              ? "🥈"
-                              : i === 2
-                                ? "🥉"
-                                : `${i + 1}.`}
-                        </span>
-                        {flavor}
-                      </li>
-                    ))}
-                  </ul>
+                <div key={username} className="user-ranking-card">
+                  <p className="user-ranking-name">{username}'s Ranking</p>
+
+                  {/* Podium: top 3 */}
+                  <div className="ranking-podium">
+                    {/* 2nd */}
+                    <div className="podium-slot">
+                      {flavors[1] && (
+                        <>
+                          {FLAVOR_IMG[flavors[1]] ? (
+                            <img src={FLAVOR_IMG[flavors[1]]} alt={flavors[1]} className="podium-can" />
+                          ) : (
+                            <span className="podium-can-unk">?</span>
+                          )}
+                          <div className="podium-block podium-block-2">
+                            <span className="podium-num">2</span>
+                          </div>
+                          <p className="podium-label">{flavors[1]}</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 1st */}
+                    <div className="podium-slot podium-slot-1">
+                      {flavors[0] && (
+                        <>
+                          <span className="podium-crown">👑</span>
+                          {FLAVOR_IMG[flavors[0]] ? (
+                            <img src={FLAVOR_IMG[flavors[0]]} alt={flavors[0]} className="podium-can podium-can-1" />
+                          ) : (
+                            <span className="podium-can-unk">?</span>
+                          )}
+                          <div className="podium-block podium-block-1">
+                            <span className="podium-num">1</span>
+                          </div>
+                          <p className="podium-label">{flavors[0]}</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 3rd */}
+                    <div className="podium-slot">
+                      {flavors[2] && (
+                        <>
+                          {FLAVOR_IMG[flavors[2]] ? (
+                            <img src={FLAVOR_IMG[flavors[2]]} alt={flavors[2]} className="podium-can" />
+                          ) : (
+                            <span className="podium-can-unk">?</span>
+                          )}
+                          <div className="podium-block podium-block-3">
+                            <span className="podium-num">3</span>
+                          </div>
+                          <p className="podium-label">{flavors[2]}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Positions 4+ */}
+                  {flavors.length > 3 && (
+                    <ul className="ranking-rest-list">
+                      {flavors.slice(3).map((flavor, i) => (
+                        <li key={flavor} className="ranking-rest-item">
+                          <span className="ranking-rest-num">{i + 4}.</span>
+                          {FLAVOR_IMG[flavor] ? (
+                            <img src={FLAVOR_IMG[flavor]} alt={flavor} className="ranking-rest-can" />
+                          ) : (
+                            <span className="ranking-rest-unk">?</span>
+                          )}
+                          <span className="ranking-rest-name">{flavor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+      {tooltip && (
+        <div
+          className="flavor-can-tooltip-popup"
+          style={{ left: tooltip.x, top: tooltip.y }}
+        >
+          <img src={tooltip.img} alt="" />
+        </div>
+      )}
     </div>
   );
 };

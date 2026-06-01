@@ -95,13 +95,32 @@ const upload = multer({
  */
 router.get("/", async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM messages ORDER BY created_at DESC",
-    );
+    const { rows } = await pool.query(`
+      SELECT m.*, COALESCE(COUNT(r.id), 0)::int AS reply_count,
+             MAX(r.created_at) AS latest_reply_at
+      FROM messages m
+      LEFT JOIN messages r ON r.parent_id = m.id
+      WHERE m.parent_id IS NULL
+      GROUP BY m.id
+      ORDER BY m.created_at DESC
+    `);
     res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+router.get("/:id/replies", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM messages WHERE parent_id = $1 ORDER BY created_at ASC",
+      [req.params.id],
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch replies" });
   }
 });
 
@@ -151,7 +170,7 @@ router.post("/", requireAuth, async (req, res) => {
   });
   if (res.headersSent) return;
 
-  const { content } = req.body;
+  const { content, parent_id } = req.body;
   if (!content || !content.trim())
     return res.status(400).json({ error: "content is required" });
 
@@ -161,10 +180,12 @@ router.post("/", requireAuth, async (req, res) => {
       : `/uploads/${req.file.filename}`
     : null;
 
+  const parentId = parent_id ? parseInt(parent_id) : null;
+
   try {
     const { rows } = await pool.query(
-      "INSERT INTO messages (content, user_id, author, image_url) VALUES ($1, $2, $3, $4) RETURNING *",
-      [content.trim(), req.user.user_id, req.user.username, imageUrl],
+      "INSERT INTO messages (content, user_id, author, image_url, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [content.trim(), req.user.user_id, req.user.username, imageUrl, parentId],
     );
     res.status(201).json(rows[0]);
   } catch (err) {

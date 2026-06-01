@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import "./MessageBoard.css";
 import { Button, Input } from "reactstrap";
 import MessageItem from "./MessageItem";
+import ThreadPanel from "./ThreadPanel";
 
 const MessageBoard = () => {
   const { user, logout } = useAuth();
@@ -16,6 +17,58 @@ const MessageBoard = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openThread, setOpenThread] = useState(null);
+  const [boardLastVisit] = useState(() => {
+    const prev = localStorage.getItem("board_last_visit");
+    localStorage.setItem("board_last_visit", Date.now().toString());
+    return prev ? parseInt(prev) : null;
+  });
+
+  const isNewMessage = (msg) => {
+    if (!boardLastVisit) return false;
+    if (msg.user_id === user?.user_id) return false;
+    return new Date(msg.created_at) > new Date(boardLastVisit);
+  };
+  const [readTimestamps, setReadTimestamps] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("thread_reads") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  const handleReplyPosted = (messageId) => {
+    const now = new Date().toISOString();
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? { ...m, reply_count: (m.reply_count || 0) + 1, latest_reply_at: now }
+          : m,
+      ),
+    );
+    setReadTimestamps((prev) => {
+      const next = { ...prev, [messageId]: Date.now() };
+      localStorage.setItem("thread_reads", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const openThread_ = (message) => {
+    const prevReadAt = readTimestamps[message.id] || null;
+    setOpenThread({ message, unreadSince: prevReadAt });
+    const now = Date.now();
+    setReadTimestamps((prev) => {
+      const next = { ...prev, [message.id]: now };
+      localStorage.setItem("thread_reads", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const hasUnread = (msg) => {
+    if (!msg.reply_count || !msg.latest_reply_at) return false;
+    const lastRead = readTimestamps[msg.id];
+    return !lastRead || new Date(msg.latest_reply_at) > new Date(lastRead);
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -129,7 +182,10 @@ const MessageBoard = () => {
 
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
 
-      <div className="message-board-content">
+      <div
+        className="message-board-content"
+        style={openThread ? { paddingRight: 376 } : undefined}
+      >
         {loading ? (
           <p>Loading messages...</p>
         ) : (
@@ -206,11 +262,25 @@ const MessageBoard = () => {
                 onDelete={
                   message.user_id === user?.user_id ? handleDeleteMessage : null
                 }
+                onReply={openThread_}
+                hasUnread={hasUnread(message)}
+                isNew={isNewMessage(message)}
+                isActive={openThread?.message?.id === message.id}
               />
             ))}
           </div>
         )}
       </div>
+
+      {openThread && (
+        <ThreadPanel
+          message={openThread.message}
+          unreadSince={openThread.unreadSince}
+          currentUser={user}
+          onClose={() => setOpenThread(null)}
+          onReplyPosted={handleReplyPosted}
+        />
+      )}
     </div>
   );
 };

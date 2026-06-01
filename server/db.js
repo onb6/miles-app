@@ -54,6 +54,11 @@ const initDb = async () => {
   `);
 
   await pool.query(`
+    ALTER TABLE messages
+      ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES messages(id) ON DELETE CASCADE
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS olipop_rankings (
       id         SERIAL PRIMARY KEY,
       user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BsThreeDots } from "react-icons/bs";
+import { BsThreeDots, BsChat } from "react-icons/bs";
 import {
   Card,
   CardBody,
@@ -14,7 +14,15 @@ import {
 } from "reactstrap";
 import "./MessageBoard.css";
 
-const MessageItem = ({ message, onEdit, onDelete }) => {
+const MessageItem = ({
+  message,
+  onEdit,
+  onDelete,
+  onReply,
+  hasUnread,
+  isNew,
+  isActive,
+}) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,7 +44,9 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
   const canAct = onEdit || onDelete;
 
   return (
-    <Card className="message-card">
+    <Card
+      className={`message-card${isNew || hasUnread ? " message-card-new" : ""}${isActive ? " message-card-active" : ""}`}
+    >
       {message.image_url && (
         <img
           src={message.image_url}
@@ -46,6 +56,7 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
       )}
       <CardBody>
         <div className="message-card-header">
+          {isNew && <span className="new-badge">NEW</span>}
           <CardSubtitle
             className="text-muted"
             style={{ fontSize: "0.8rem", margin: 0 }}
@@ -105,6 +116,22 @@ const MessageItem = ({ message, onEdit, onDelete }) => {
           </div>
         ) : (
           <CardText>{message.content}</CardText>
+        )}
+        {onReply && (
+          <button
+            className={`reply-btn${hasUnread ? " reply-btn-unread" : ""}`}
+            onClick={() => onReply(message)}
+          >
+            <BsChat size={13} />
+            {hasUnread && <span className="reply-unread-dot" />}
+            <span>
+              {!message.reply_count || message.reply_count === 0
+                ? "Reply"
+                : message.reply_count === 1
+                  ? `${message.reply_count} reply`
+                  : `${message.reply_count} replies`}
+            </span>
+          </button>
         )}
       </CardBody>
     </Card>
