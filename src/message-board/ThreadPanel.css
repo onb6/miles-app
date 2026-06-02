@@ -131,10 +131,12 @@
     right: 0;
     width: 100%;
     height: 85vh;
+    max-height: calc(100vh - 80px);
     border-left: none;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    transition: transform 0.25s ease;
   }
 
   .thread-panel-header::before {

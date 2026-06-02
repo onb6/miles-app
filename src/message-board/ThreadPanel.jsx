@@ -13,6 +13,33 @@ const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted
   const [replyText, setReplyText] = useState("");
   const [loading, setLoading] = useState(true);
   const repliesEndRef = useRef(null);
+  const panelRef = useRef(null);
+  const dragStartY = useRef(null);
+
+  const onDragStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+    if (panelRef.current) panelRef.current.style.transition = "none";
+  };
+
+  const onDragMove = (e) => {
+    if (dragStartY.current === null) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0 && panelRef.current) {
+      panelRef.current.style.transform = `translateY(${delta}px)`;
+    }
+  };
+
+  const onDragEnd = (e) => {
+    if (dragStartY.current === null) return;
+    const delta = e.changedTouches[0].clientY - dragStartY.current;
+    if (panelRef.current) panelRef.current.style.transition = "";
+    if (delta > 80) {
+      onClose();
+    } else if (panelRef.current) {
+      panelRef.current.style.transform = "";
+    }
+    dragStartY.current = null;
+  };
 
   useEffect(() => {
     fetch(`/api/messages/${message.id}/replies`, { credentials: "include" })
@@ -65,8 +92,13 @@ const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted
   };
 
   return (
-    <div className="thread-panel">
-      <div className="thread-panel-header">
+    <div className="thread-panel" ref={panelRef}>
+      <div
+        className="thread-panel-header"
+        onTouchStart={onDragStart}
+        onTouchMove={onDragMove}
+        onTouchEnd={onDragEnd}
+      >
         <span className="thread-panel-title">Thread</span>
         <button className="thread-close-btn" onClick={onClose}>
           <BsX size={20} />
