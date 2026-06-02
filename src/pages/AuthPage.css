@@ -104,3 +104,13 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 0 16px;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+  }
+}

@@ -38,6 +38,20 @@
   margin-top: 70px;
 }
 
+.message-board-content.thread-open {
+  padding-right: 376px;
+}
+
+@media (max-width: 700px) {
+  .messsage-board-header {
+    padding: 12px 16px;
+  }
+
+  .message-board-content.thread-open {
+    padding-right: 0;
+  }
+}
+
 .masonry-grid {
   columns: 220px;
   column-gap: 16px;

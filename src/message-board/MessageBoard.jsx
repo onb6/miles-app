@@ -168,10 +168,7 @@ const MessageBoard = () => {
 
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
 
-      <div
-        className="message-board-content"
-        style={openThread ? { paddingRight: 376 } : undefined}
-      >
+      <div className={`message-board-content${openThread ? " thread-open" : ""}`}>
         {loading ? (
           <p>Loading messages...</p>
         ) : (
