@@ -7,7 +7,7 @@ const AuthPage = () => {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [form, setForm] = useState({ username: "", email: "", identifier: "", password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +22,7 @@ const AuthPage = () => {
     setError(null);
     try {
       if (mode === "login") {
-        await login(form.email, form.password);
+        await login(form.identifier, form.password);
       } else {
         await register(form.username, form.email, form.password);
       }
@@ -67,17 +67,31 @@ const AuthPage = () => {
               />
             </div>
           )}
-          <div className="auth-field">
-            <label>Email</label>
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="your@email.com"
-              required
-            />
-          </div>
+          {mode === "login" ? (
+            <div className="auth-field">
+              <label>Email or Username</label>
+              <input
+                name="identifier"
+                type="text"
+                value={form.identifier}
+                onChange={handleChange}
+                placeholder="your@email.com or username"
+                required
+              />
+            </div>
+          ) : (
+            <div className="auth-field">
+              <label>Email</label>
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+          )}
           <div className="auth-field">
             <label>Password</label>
             <input

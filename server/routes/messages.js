@@ -2,8 +2,53 @@ const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
 const multer = require("multer");
+const { Resend } = require("resend");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const APP_URL = process.env.APP_URL || "";
+const FROM = process.env.RESEND_FROM || "For Miles <notifications@yourdomain.com>";
+
+async function notifyNewMessage(message, posterUserId) {
+  if (!resend) return;
+  try {
+    const { rows } = await pool.query(
+      "SELECT email FROM users WHERE id != $1",
+      [posterUserId]
+    );
+    if (rows.length === 0) return;
+    await resend.emails.send({
+      from: FROM,
+      to: rows.map((r) => r.email),
+      subject: `New message from ${message.author}`,
+      html: `<p><strong>${message.author}</strong> posted on the message board:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${message.content}</blockquote><p><a href="${APP_URL}">View it here</a></p>`,
+    });
+  } catch (err) {
+    console.error("Email notification failed:", err);
+  }
+}
+
+async function notifyNewReply(reply, parentId, replierUserId) {
+  if (!resend) return;
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.email FROM messages m
+       JOIN users u ON u.id = m.user_id
+       WHERE m.id = $1 AND m.user_id != $2`,
+      [parentId, replierUserId]
+    );
+    if (rows.length === 0) return;
+    await resend.emails.send({
+      from: FROM,
+      to: rows[0].email,
+      subject: `${reply.author} replied to your message`,
+      html: `<p><strong>${reply.author}</strong> replied to your message:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${reply.content}</blockquote><p><a href="${APP_URL}">View it here</a></p>`,
+    });
+  } catch (err) {
+    console.error("Email notification failed:", err);
+  }
+}
 
 const router = express.Router();
 
@@ -187,7 +232,14 @@ router.post("/", requireAuth, async (req, res) => {
       "INSERT INTO messages (content, user_id, author, image_url, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [content.trim(), req.user.user_id, req.user.username, imageUrl, parentId],
     );
-    res.status(201).json(rows[0]);
+    const message = rows[0];
+    res.status(201).json(message);
+
+    if (parentId) {
+      notifyNewReply(message, parentId, req.user.user_id);
+    } else {
+      notifyNewMessage(message, req.user.user_id);
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create message" });

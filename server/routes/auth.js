@@ -127,14 +127,15 @@ router.post("/register", async (req, res) => {
  *             schema: { $ref: '#/components/schemas/Error' }
  */
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "email and password are required" });
+  const { identifier, password } = req.body;
+  if (!identifier || !password)
+    return res.status(400).json({ error: "email/username and password are required" });
 
   try {
+    const normalized = identifier.trim().toLowerCase();
     const { rows } = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
-      [email.trim().toLowerCase()]
+      "SELECT id, username, email, password_hash FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $1",
+      [normalized]
     );
     if (rows.length === 0)
       return res.status(401).json({ error: "Invalid email or password" });
