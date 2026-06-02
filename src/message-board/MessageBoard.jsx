@@ -18,24 +18,14 @@ const MessageBoard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openThread, setOpenThread] = useState(null);
-  const [boardLastVisit] = useState(() => {
-    const prev = localStorage.getItem("board_last_visit");
-    localStorage.setItem("board_last_visit", Date.now().toString());
-    return prev ? parseInt(prev) : null;
-  });
+  const [boardLastVisit, setBoardLastVisit] = useState(null);
+  const [readTimestamps, setReadTimestamps] = useState({});
 
   const isNewMessage = (msg) => {
     if (!boardLastVisit) return false;
     if (msg.user_id === user?.user_id) return false;
     return new Date(msg.created_at) > new Date(boardLastVisit);
   };
-  const [readTimestamps, setReadTimestamps] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("thread_reads") || "{}");
-    } catch {
-      return {};
-    }
-  });
 
   const handleReplyPosted = (messageId) => {
     const now = new Date().toISOString();
@@ -46,22 +36,15 @@ const MessageBoard = () => {
           : m,
       ),
     );
-    setReadTimestamps((prev) => {
-      const next = { ...prev, [messageId]: Date.now() };
-      localStorage.setItem("thread_reads", JSON.stringify(next));
-      return next;
-    });
+    setReadTimestamps((prev) => ({ ...prev, [messageId]: now }));
+    fetch(`/api/read/thread/${messageId}`, { method: "POST", credentials: "include" }).catch(() => {});
   };
 
   const openThread_ = (message) => {
     const prevReadAt = readTimestamps[message.id] || null;
     setOpenThread({ message, unreadSince: prevReadAt });
-    const now = Date.now();
-    setReadTimestamps((prev) => {
-      const next = { ...prev, [message.id]: now };
-      localStorage.setItem("thread_reads", JSON.stringify(next));
-      return next;
-    });
+    setReadTimestamps((prev) => ({ ...prev, [message.id]: new Date().toISOString() }));
+    fetch(`/api/read/thread/${message.id}`, { method: "POST", credentials: "include" }).catch(() => {});
   };
 
   const hasUnread = (msg) => {
@@ -71,20 +54,23 @@ const MessageBoard = () => {
   };
 
   useEffect(() => {
-    fetchMessages();
+    Promise.all([
+      fetch("/api/messages", { credentials: "include" }).then((r) => {
+        if (!r.ok) throw new Error("Failed to load messages");
+        return r.json();
+      }),
+      fetch("/api/read/board", { method: "POST", credentials: "include" }).then((r) =>
+        r.ok ? r.json() : {}
+      ),
+    ])
+      .then(([msgs, readState]) => {
+        setMessages(msgs);
+        setBoardLastVisit(readState.prev_visited_at || null);
+        setReadTimestamps(readState.thread_reads || {});
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
-
-  const fetchMessages = async () => {
-    try {
-      const res = await fetch("/api/messages", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load messages");
-      setMessages(await res.json());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

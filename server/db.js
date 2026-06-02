@@ -69,6 +69,22 @@ const initDb = async () => {
       UNIQUE(user_id, position)
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_board_visits (
+      user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      visited_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_thread_reads (
+      user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
+      read_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, message_id)
+    )
+  `);
 };
 
 module.exports = { pool, initDb };

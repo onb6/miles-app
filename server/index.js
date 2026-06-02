@@ -10,6 +10,7 @@ const { initDb } = require("./db");
 const authRouter = require("./routes/auth");
 const messagesRouter = require("./routes/messages");
 const rankingsRouter = require("./routes/rankings");
+const readRouter = require("./routes/read");
 
 const uploadsDir = path.join(__dirname, "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -29,6 +30,7 @@ app.use("/uploads", express.static(uploadsDir));
 app.use("/api/auth", authRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/rankings", rankingsRouter);
+app.use("/api/read", readRouter);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
