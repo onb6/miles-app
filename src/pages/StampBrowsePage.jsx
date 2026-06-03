@@ -8,6 +8,7 @@ import {
   BsX,
   BsSortDown,
   BsSortUp,
+  BsPencil,
 } from "react-icons/bs";
 import { Button } from "reactstrap";
 import Select from "react-select";
@@ -215,6 +216,14 @@ const StampBrowsePage = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [memberWishlist, setMemberWishlist] = useState(new Set());
   const [memberCollection, setMemberCollection] = useState(new Set());
+  const [goals, setGoals] = useState([]);
+  const [memberGoals, setMemberGoals] = useState([]);
+  const [newGoalTitle, setNewGoalTitle] = useState("");
+  const [newGoalYears, setNewGoalYears] = useState([]);
+  const [newGoalMonths, setNewGoalMonths] = useState([]);
+  const [newGoalTopics, setNewGoalTopics] = useState([]);
+  const [newGoalStates, setNewGoalStates] = useState([]);
+  const [addingGoal, setAddingGoal] = useState(false);
 
   // Filters — arrays for multi-select
   const [search, setSearch] = useState("");
@@ -276,12 +285,17 @@ const StampBrowsePage = () => {
       .then((r) => r.json())
       .then((data) => setMembers(data))
       .catch(() => {});
+    fetch("/api/stamps/goals", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => setGoals(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!selectedMember) {
       setMemberWishlist(new Set());
       setMemberCollection(new Set());
+      setMemberGoals([]);
       return;
     }
     Promise.all([
@@ -292,11 +306,19 @@ const StampBrowsePage = () => {
         `/api/stamps/user/${encodeURIComponent(selectedMember)}/collection`,
         { credentials: "include" },
       ),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/goals`, {
+        credentials: "include",
+      }),
     ])
-      .then(async ([wRes, cRes]) => {
-        const [wSlugs, cSlugs] = await Promise.all([wRes.json(), cRes.json()]);
+      .then(async ([wRes, cRes, gRes]) => {
+        const [wSlugs, cSlugs, gData] = await Promise.all([
+          wRes.json(),
+          cRes.json(),
+          gRes.json(),
+        ]);
         setMemberWishlist(new Set(wSlugs));
         setMemberCollection(new Set(cSlugs));
+        setMemberGoals(gData);
       })
       .catch(() => {});
   }, [selectedMember]);
@@ -397,6 +419,78 @@ const StampBrowsePage = () => {
     }
   };
 
+  const addGoal = async () => {
+    if (!newGoalTitle.trim() || addingGoal) return;
+    setAddingGoal(true);
+    const filters = [
+      ...newGoalYears.map((v) => ({
+        filter_type: "year",
+        filter_value: String(v),
+      })),
+      ...newGoalMonths.map((v) => ({ filter_type: "month", filter_value: v })),
+      ...newGoalTopics.map((v) => ({ filter_type: "topic", filter_value: v })),
+      ...newGoalStates.map((v) => ({ filter_type: "state", filter_value: v })),
+    ];
+    try {
+      const res = await fetch("/api/stamps/goals", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newGoalTitle.trim(), filters }),
+      });
+      const goal = await res.json();
+      setGoals((prev) => [...prev, goal]);
+      setNewGoalTitle("");
+      setNewGoalYears([]);
+      setNewGoalMonths([]);
+      setNewGoalTopics([]);
+      setNewGoalStates([]);
+    } catch {
+    } finally {
+      setAddingGoal(false);
+    }
+  };
+
+  const toggleGoalComplete = async (id) => {
+    setGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g)),
+    );
+    try {
+      await fetch(`/api/stamps/goals/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+    } catch {
+      setGoals((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g)),
+      );
+    }
+  };
+
+  const deleteGoal = async (id) => {
+    setGoals((prev) => prev.filter((g) => g.id !== id));
+    try {
+      await fetch(`/api/stamps/goals/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch {}
+  };
+
+  const editGoal = async (id, title, filters) => {
+    setGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, title, filters } : g)),
+    );
+    try {
+      await fetch(`/api/stamps/goals/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, filters }),
+      });
+    } catch {}
+  };
+
   const handleStampClick = useCallback(
     (slug) => {
       sessionStorage.setItem(
@@ -443,6 +537,7 @@ const StampBrowsePage = () => {
 
   const activeWishlist = selectedMember ? memberWishlist : wishlist;
   const activeCollection = selectedMember ? memberCollection : collection;
+  const activeGoals = selectedMember ? memberGoals : goals;
 
   const displayed = useMemo(() => {
     let base =
@@ -542,8 +637,17 @@ const StampBrowsePage = () => {
               className={`toggle-btn toggle-btn--collection ${view === "collection" ? "active" : ""}`}
               onClick={() => setView("collection")}
             >
-              {selectedMember ? `${selectedMember}'s Collection` : "My Collection"}
+              {selectedMember
+                ? `${selectedMember}'s Collection`
+                : "My Collection"}
               <span className="toggle-count">{activeCollection.size}</span>
+            </button>
+            <button
+              className={`toggle-btn toggle-btn--goals ${view === "goals" ? "active" : ""}`}
+              onClick={() => setView("goals")}
+            >
+              {selectedMember ? `${selectedMember}'s Goals` : "My Goals"}
+              <span className="toggle-count">{activeGoals.length}</span>
             </button>
           </div>
 
@@ -556,9 +660,6 @@ const StampBrowsePage = () => {
             onClick={() => setSelectedMember(null)}
           >
             Me
-            <span className="stamp-member-counts">
-              {wishlist.size + collection.size}
-            </span>
           </button>
           {members.map((m) => (
             <button
@@ -567,118 +668,141 @@ const StampBrowsePage = () => {
               onClick={() => handleSelectMember(m.username)}
             >
               {m.username}
-              <span className="stamp-member-counts">
-                {Number(m.collection_count) + Number(m.wishlist_count)}
-              </span>
             </button>
           ))}
         </div>
 
-        <div className="stamp-filters">
-          <div className="stamp-search-wrap">
-            <input
-              className="stamp-search"
-              type="search"
-              placeholder="Search stamps…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+        {view !== "goals" && (
+          <div className="stamp-filters">
+            <div className="stamp-search-wrap">
+              <input
+                className="stamp-search"
+                type="search"
+                placeholder="Search stamps…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
 
-          <div className="stamp-select-wrap">
-            <Select
-              isMulti
-              isSearchable
-              options={YEAR_OPTIONS}
-              value={YEAR_OPTIONS.filter((o) => filterYears.includes(o.value))}
-              onChange={(sel) => setFilterYears(sel.map((o) => o.value))}
-              placeholder="Year"
-              styles={SELECT_STYLES}
-              classNamePrefix="rs"
-            />
-          </div>
+            <div className="stamp-select-wrap">
+              <Select
+                isMulti
+                isSearchable
+                options={YEAR_OPTIONS}
+                value={YEAR_OPTIONS.filter((o) =>
+                  filterYears.includes(o.value),
+                )}
+                onChange={(sel) => setFilterYears(sel.map((o) => o.value))}
+                placeholder="Year"
+                styles={SELECT_STYLES}
+                classNamePrefix="rs"
+              />
+            </div>
 
-          <div className="stamp-select-wrap">
-            <Select
-              isMulti
-              isSearchable
-              options={MONTH_OPTIONS}
-              value={MONTH_OPTIONS.filter((o) =>
-                filterMonths.includes(o.value),
-              )}
-              onChange={(sel) => setFilterMonths(sel.map((o) => o.value))}
-              placeholder="Month"
-              styles={SELECT_STYLES}
-              classNamePrefix="rs"
-            />
-          </div>
+            <div className="stamp-select-wrap">
+              <Select
+                isMulti
+                isSearchable
+                options={MONTH_OPTIONS}
+                value={MONTH_OPTIONS.filter((o) =>
+                  filterMonths.includes(o.value),
+                )}
+                onChange={(sel) => setFilterMonths(sel.map((o) => o.value))}
+                placeholder="Month"
+                styles={SELECT_STYLES}
+                classNamePrefix="rs"
+              />
+            </div>
 
-          <div className="stamp-select-wrap stamp-select-wrap--wide">
-            <Select
-              isMulti
-              isSearchable
-              options={TOPIC_OPTIONS}
-              value={TOPIC_OPTIONS.filter((o) =>
-                filterTopics.includes(o.value),
-              )}
-              onChange={(sel) => setFilterTopics(sel.map((o) => o.value))}
-              placeholder="Category"
-              styles={SELECT_STYLES}
-              classNamePrefix="rs"
-            />
-          </div>
+            <div className="stamp-select-wrap stamp-select-wrap--wide">
+              <Select
+                isMulti
+                isSearchable
+                options={TOPIC_OPTIONS}
+                value={TOPIC_OPTIONS.filter((o) =>
+                  filterTopics.includes(o.value),
+                )}
+                onChange={(sel) => setFilterTopics(sel.map((o) => o.value))}
+                placeholder="Category"
+                styles={SELECT_STYLES}
+                classNamePrefix="rs"
+              />
+            </div>
 
-          <div className="stamp-select-wrap stamp-select-wrap--wide">
-            <Select
-              isMulti
-              isSearchable
-              options={STATE_OPTIONS}
-              value={STATE_OPTIONS.filter((o) =>
-                filterStates.includes(o.value),
-              )}
-              onChange={(sel) => setFilterStates(sel.map((o) => o.value))}
-              placeholder="State"
-              styles={SELECT_STYLES}
-              classNamePrefix="rs"
-            />
-          </div>
+            <div className="stamp-select-wrap stamp-select-wrap--wide">
+              <Select
+                isMulti
+                isSearchable
+                options={STATE_OPTIONS}
+                value={STATE_OPTIONS.filter((o) =>
+                  filterStates.includes(o.value),
+                )}
+                onChange={(sel) => setFilterStates(sel.map((o) => o.value))}
+                placeholder="State"
+                styles={SELECT_STYLES}
+                classNamePrefix="rs"
+              />
+            </div>
 
-          {hasFilters && (
-            <button
-              className="stamp-clear-btn"
-              onClick={clearFilters}
-              title="Clear filters"
-            >
-              <BsX /> Clear
-            </button>
-          )}
+            {hasFilters && (
+              <button
+                className="stamp-clear-btn"
+                onClick={clearFilters}
+                title="Clear filters"
+              >
+                <BsX /> Clear
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {view !== "goals" && (
+        <div className="stamp-results-bar">
+          <span>
+            {hasFilters ? (
+              <>
+                {displayed.length} of {baseCount} stamp
+                {baseCount !== 1 ? "s" : ""}
+              </>
+            ) : (
+              <>
+                {baseCount} stamp{baseCount !== 1 ? "s" : ""}
+              </>
+            )}
+          </span>
+          <button
+            className="stamp-sort-btn"
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            title={sortDir === "asc" ? "Oldest first" : "Newest first"}
+          >
+            {sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
+            {sortDir === "desc" ? "Newest first" : "Oldest first"}
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="stamp-results-bar">
-        <span>
-          {hasFilters ? (
-            <>
-              {displayed.length} of {baseCount} stamp
-              {baseCount !== 1 ? "s" : ""}
-            </>
-          ) : (
-            <>
-              {baseCount} stamp{baseCount !== 1 ? "s" : ""}
-            </>
-          )}
-        </span>
-        <button
-          className="stamp-sort-btn"
-          onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-          title={sortDir === "asc" ? "Oldest first" : "Newest first"}
-        >
-          {sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
-          {sortDir === "desc" ? "Newest first" : "Oldest first"}
-        </button>
-      </div>
-
-      {displayed.length === 0 ? (
+      {view === "goals" ? (
+        <GoalsView
+          goals={activeGoals}
+          isOwner={!selectedMember}
+          onToggleComplete={toggleGoalComplete}
+          onDelete={deleteGoal}
+          newGoalTitle={newGoalTitle}
+          setNewGoalTitle={setNewGoalTitle}
+          newGoalYears={newGoalYears}
+          setNewGoalYears={setNewGoalYears}
+          newGoalMonths={newGoalMonths}
+          setNewGoalMonths={setNewGoalMonths}
+          newGoalTopics={newGoalTopics}
+          setNewGoalTopics={setNewGoalTopics}
+          newGoalStates={newGoalStates}
+          setNewGoalStates={setNewGoalStates}
+          onAddGoal={addGoal}
+          addingGoal={addingGoal}
+          onEdit={editGoal}
+        />
+      ) : displayed.length === 0 ? (
         <div className="stamp-empty">
           {hasFilters ? (
             <>
@@ -794,5 +918,293 @@ const StampCard = ({
     </div>
   </div>
 );
+
+function getFilterLabel({ filter_type, filter_value }) {
+  if (filter_type === "state") return STATE_NAMES[filter_value] ?? filter_value;
+  return filter_value;
+}
+
+const GoalsView = ({
+  goals,
+  isOwner,
+  onToggleComplete,
+  onDelete,
+  onEdit,
+  newGoalTitle,
+  setNewGoalTitle,
+  newGoalYears,
+  setNewGoalYears,
+  newGoalMonths,
+  setNewGoalMonths,
+  newGoalTopics,
+  setNewGoalTopics,
+  newGoalStates,
+  setNewGoalStates,
+  onAddGoal,
+  addingGoal,
+}) => {
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editYears, setEditYears] = useState([]);
+  const [editMonths, setEditMonths] = useState([]);
+  const [editTopics, setEditTopics] = useState([]);
+  const [editStates, setEditStates] = useState([]);
+
+  const startEdit = (goal) => {
+    setEditingId(goal.id);
+    setEditTitle(goal.title);
+    setEditYears(
+      goal.filters
+        .filter((f) => f.filter_type === "year")
+        .map((f) => Number(f.filter_value)),
+    );
+    setEditMonths(
+      goal.filters
+        .filter((f) => f.filter_type === "month")
+        .map((f) => f.filter_value),
+    );
+    setEditTopics(
+      goal.filters
+        .filter((f) => f.filter_type === "topic")
+        .map((f) => f.filter_value),
+    );
+    setEditStates(
+      goal.filters
+        .filter((f) => f.filter_type === "state")
+        .map((f) => f.filter_value),
+    );
+  };
+
+  const saveEdit = () => {
+    if (!editTitle.trim()) return;
+    const filters = [
+      ...editYears.map((v) => ({
+        filter_type: "year",
+        filter_value: String(v),
+      })),
+      ...editMonths.map((v) => ({ filter_type: "month", filter_value: v })),
+      ...editTopics.map((v) => ({ filter_type: "topic", filter_value: v })),
+      ...editStates.map((v) => ({ filter_type: "state", filter_value: v })),
+    ];
+    onEdit(editingId, editTitle.trim(), filters);
+    setEditingId(null);
+  };
+
+  return (
+    <div className="goals-container">
+      {isOwner && (
+        <div className="goal-add-form">
+          <input
+            className="goal-title-input"
+            type="text"
+            placeholder="Add a goal…"
+            value={newGoalTitle}
+            onChange={(e) => setNewGoalTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onAddGoal()}
+          />
+          <div className="goal-add-filters">
+            <Select
+              isMulti
+              isSearchable
+              options={YEAR_OPTIONS}
+              value={YEAR_OPTIONS.filter((o) => newGoalYears.includes(o.value))}
+              onChange={(sel) => setNewGoalYears(sel.map((o) => o.value))}
+              placeholder="Year"
+              styles={SELECT_STYLES}
+              classNamePrefix="rs"
+            />
+            <Select
+              isMulti
+              isSearchable
+              options={MONTH_OPTIONS}
+              value={MONTH_OPTIONS.filter((o) =>
+                newGoalMonths.includes(o.value),
+              )}
+              onChange={(sel) => setNewGoalMonths(sel.map((o) => o.value))}
+              placeholder="Month"
+              styles={SELECT_STYLES}
+              classNamePrefix="rs"
+            />
+            <Select
+              isMulti
+              isSearchable
+              options={TOPIC_OPTIONS}
+              value={TOPIC_OPTIONS.filter((o) =>
+                newGoalTopics.includes(o.value),
+              )}
+              onChange={(sel) => setNewGoalTopics(sel.map((o) => o.value))}
+              placeholder="Category"
+              styles={SELECT_STYLES}
+              classNamePrefix="rs"
+            />
+            <Select
+              isMulti
+              isSearchable
+              options={STATE_OPTIONS}
+              value={STATE_OPTIONS.filter((o) =>
+                newGoalStates.includes(o.value),
+              )}
+              onChange={(sel) => setNewGoalStates(sel.map((o) => o.value))}
+              placeholder="State"
+              styles={SELECT_STYLES}
+              classNamePrefix="rs"
+            />
+          </div>
+          <button
+            className="goal-add-btn"
+            onClick={onAddGoal}
+            disabled={addingGoal || !newGoalTitle.trim()}
+          >
+            Add Goal
+          </button>
+        </div>
+      )}
+
+      {goals.length === 0 ? (
+        <div className="stamp-empty">
+          <p>{isOwner ? "No goals yet. Add one above!" : "No goals yet."}</p>
+        </div>
+      ) : (
+        <div className="goals-list">
+          {goals.map((goal) => (
+            <div
+              key={goal.id}
+              className={`goal-item${goal.completed && editingId !== goal.id ? " goal-item--done" : ""}`}
+            >
+              {editingId === goal.id ? (
+                <div className="goal-edit-form">
+                  <input
+                    className="goal-title-input"
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveEdit();
+                      if (e.key === "Escape") setEditingId(null);
+                    }}
+                    autoFocus
+                  />
+                  <div className="goal-add-filters">
+                    <Select
+                      isMulti
+                      isSearchable
+                      options={YEAR_OPTIONS}
+                      value={YEAR_OPTIONS.filter((o) =>
+                        editYears.includes(o.value),
+                      )}
+                      onChange={(sel) => setEditYears(sel.map((o) => o.value))}
+                      placeholder="Year"
+                      styles={SELECT_STYLES}
+                      classNamePrefix="rs"
+                    />
+                    <Select
+                      isMulti
+                      isSearchable
+                      options={MONTH_OPTIONS}
+                      value={MONTH_OPTIONS.filter((o) =>
+                        editMonths.includes(o.value),
+                      )}
+                      onChange={(sel) => setEditMonths(sel.map((o) => o.value))}
+                      placeholder="Month"
+                      styles={SELECT_STYLES}
+                      classNamePrefix="rs"
+                    />
+                    <Select
+                      isMulti
+                      isSearchable
+                      options={TOPIC_OPTIONS}
+                      value={TOPIC_OPTIONS.filter((o) =>
+                        editTopics.includes(o.value),
+                      )}
+                      onChange={(sel) => setEditTopics(sel.map((o) => o.value))}
+                      placeholder="Category"
+                      styles={SELECT_STYLES}
+                      classNamePrefix="rs"
+                    />
+                    <Select
+                      isMulti
+                      isSearchable
+                      options={STATE_OPTIONS}
+                      value={STATE_OPTIONS.filter((o) =>
+                        editStates.includes(o.value),
+                      )}
+                      onChange={(sel) => setEditStates(sel.map((o) => o.value))}
+                      placeholder="State"
+                      styles={SELECT_STYLES}
+                      classNamePrefix="rs"
+                    />
+                  </div>
+                  <div className="goal-edit-actions">
+                    <button
+                      className="goal-add-btn"
+                      onClick={saveEdit}
+                      disabled={!editTitle.trim()}
+                    >
+                      Save
+                    </button>
+                    <button
+                      className="goal-cancel-btn"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {isOwner ? (
+                    <input
+                      type="checkbox"
+                      className="goal-checkbox"
+                      checked={goal.completed}
+                      onChange={() => onToggleComplete(goal.id)}
+                    />
+                  ) : (
+                    <span
+                      className={`goal-status-dot${goal.completed ? " goal-status-dot--done" : ""}`}
+                    />
+                  )}
+                  <div className="goal-body">
+                    <span className="goal-title">{goal.title}</span>
+                    {goal.filters.length > 0 && (
+                      <div className="goal-filter-tags">
+                        {goal.filters.map((f, i) => (
+                          <span
+                            key={i}
+                            className={`goal-filter-tag goal-filter-tag--${f.filter_type}`}
+                          >
+                            {getFilterLabel(f)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {isOwner && (
+                    <div className="goal-item-actions">
+                      <button
+                        className="goal-edit-btn"
+                        onClick={() => startEdit(goal)}
+                        aria-label="Edit goal"
+                      >
+                        <BsPencil />
+                      </button>
+                      <button
+                        className="goal-delete-btn"
+                        onClick={() => onDelete(goal.id)}
+                        aria-label="Delete goal"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default StampBrowsePage;
