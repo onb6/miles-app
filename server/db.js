@@ -103,6 +103,25 @@ const initDb = async () => {
       PRIMARY KEY (user_id, slug)
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stamp_goals (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title      TEXT NOT NULL,
+      completed  BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stamp_goal_filters (
+      id           SERIAL PRIMARY KEY,
+      goal_id      INTEGER NOT NULL REFERENCES stamp_goals(id) ON DELETE CASCADE,
+      filter_type  TEXT NOT NULL,
+      filter_value TEXT NOT NULL
+    )
+  `);
 };
 
 module.exports = { pool, initDb };
