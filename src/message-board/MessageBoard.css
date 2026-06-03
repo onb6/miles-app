@@ -14,8 +14,11 @@
 }
 
 .messsage-board-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
-  flex: 1;
+  pointer-events: none;
 }
 
 .header-user {

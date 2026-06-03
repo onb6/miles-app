@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { BiArrowBack } from "react-icons/bi";
 import { BsGripVertical, BsX, BsPlus } from "react-icons/bs";
 import { useAuth } from "../context/AuthContext";
 import { Button, Input } from "reactstrap";
@@ -277,8 +276,7 @@ const OlipopRankingPage = () => {
           size="sm"
           onClick={() => navigate("/")}
         >
-          <BiArrowBack style={{ marginRight: 6 }} />
-          Back
+          Home
         </Button>
         <h2>Olipop Rankings</h2>
         <div className="header-user">
@@ -407,7 +405,11 @@ const OlipopRankingPage = () => {
                       {flavors[1] && (
                         <>
                           {FLAVOR_IMG[flavors[1]] ? (
-                            <img src={FLAVOR_IMG[flavors[1]]} alt={flavors[1]} className="podium-can" />
+                            <img
+                              src={FLAVOR_IMG[flavors[1]]}
+                              alt={flavors[1]}
+                              className="podium-can"
+                            />
                           ) : (
                             <span className="podium-can-unk">?</span>
                           )}
@@ -425,7 +427,11 @@ const OlipopRankingPage = () => {
                         <>
                           <span className="podium-crown">👑</span>
                           {FLAVOR_IMG[flavors[0]] ? (
-                            <img src={FLAVOR_IMG[flavors[0]]} alt={flavors[0]} className="podium-can podium-can-1" />
+                            <img
+                              src={FLAVOR_IMG[flavors[0]]}
+                              alt={flavors[0]}
+                              className="podium-can podium-can-1"
+                            />
                           ) : (
                             <span className="podium-can-unk">?</span>
                           )}
@@ -442,7 +448,11 @@ const OlipopRankingPage = () => {
                       {flavors[2] && (
                         <>
                           {FLAVOR_IMG[flavors[2]] ? (
-                            <img src={FLAVOR_IMG[flavors[2]]} alt={flavors[2]} className="podium-can" />
+                            <img
+                              src={FLAVOR_IMG[flavors[2]]}
+                              alt={flavors[2]}
+                              className="podium-can"
+                            />
                           ) : (
                             <span className="podium-can-unk">?</span>
                           )}
@@ -462,7 +472,11 @@ const OlipopRankingPage = () => {
                         <li key={flavor} className="ranking-rest-item">
                           <span className="ranking-rest-num">{i + 4}.</span>
                           {FLAVOR_IMG[flavor] ? (
-                            <img src={FLAVOR_IMG[flavor]} alt={flavor} className="ranking-rest-can" />
+                            <img
+                              src={FLAVOR_IMG[flavor]}
+                              alt={flavor}
+                              className="ranking-rest-can"
+                            />
                           ) : (
                             <span className="ranking-rest-unk">?</span>
                           )}

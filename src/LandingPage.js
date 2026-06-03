@@ -1,6 +1,7 @@
 import "./LandingPage.css";
 import MilesCard from "./components/MilesCard";
 import OlipopImg from "./assets/olipop.png";
+import StampsImg from "./assets/stamps.jpg";
 import LoadingImg from "./assets/loading.png";
 import MessageImg from "./assets/messages.jpg";
 import { Button } from "reactstrap";
@@ -33,6 +34,15 @@ const LandingPage = () => {
       buttonDisabled: false,
       buttonLink: "/olipop",
       cardImg: OlipopImg,
+    },
+    {
+      title: "Stamp Collection",
+      subtitle: "Browse stamps and build your wishlist!",
+      text: "2026 USPS stamps with all the details",
+      buttonText: "Browse Stamps",
+      buttonDisabled: false,
+      buttonLink: "/stamps",
+      cardImg: StampsImg,
     },
     {
       title: "Another app",
