@@ -14,6 +14,21 @@ import {
 } from "reactstrap";
 import "./MessageBoard.css";
 
+const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
+
+function linkify(text) {
+  const parts = text.split(URL_REGEX);
+  return parts.map((part, i) =>
+    URL_REGEX.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer">
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
+}
+
 const MessageItem = ({
   message,
   onEdit,
@@ -115,7 +130,7 @@ const MessageItem = ({
             </div>
           </div>
         ) : (
-          <CardText>{message.content}</CardText>
+          <CardText>{linkify(message.content)}</CardText>
         )}
         {onReply && (
           <button
