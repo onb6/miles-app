@@ -44,14 +44,6 @@ const LandingPage = () => {
       buttonLink: "/stamps",
       cardImg: StampsImg,
     },
-    {
-      title: "Another app",
-      subtitle: "Going to figure out more thingssss!",
-      text: "I love youuuuu",
-      buttonText: "Let's Go!",
-      buttonDisabled: true,
-      cardImg: LoadingImg,
-    },
   ];
 
   return (
