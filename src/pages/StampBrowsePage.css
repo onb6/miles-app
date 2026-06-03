@@ -126,6 +126,69 @@
   color: #286e84;
 }
 
+/* Top controls row (view toggle + member pills) */
+.stamp-top-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stamp-members-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(40, 110, 132, 0.2);
+  flex-shrink: 0;
+}
+
+.stamp-members-label {
+  font-size: 0.78rem;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.stamp-member-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: white;
+  border: 1px solid rgba(40, 110, 132, 0.2);
+  border-radius: 20px;
+  padding: 4px 10px 4px 12px;
+  font-size: 0.8rem;
+  color: #286e84;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.stamp-member-btn:hover {
+  background: rgba(40, 110, 132, 0.07);
+  border-color: #286e84;
+}
+
+.stamp-member-btn.active {
+  background: #286e84;
+  border-color: #286e84;
+  color: white;
+}
+
+.stamp-member-btn.active .stamp-member-counts {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.stamp-member-counts {
+  background: rgba(40, 110, 132, 0.1);
+  color: #286e84;
+  border-radius: 20px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 /* Filters row */
 .stamp-filters {
   display: flex;

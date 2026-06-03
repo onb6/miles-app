@@ -106,4 +106,60 @@ router.delete("/collection/:slug", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/stamps/users — list all other users with wishlist/collection counts
+router.get("/users", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.username,
+         COUNT(DISTINCT w.slug) AS wishlist_count,
+         COUNT(DISTINCT c.slug) AS collection_count
+       FROM users u
+       LEFT JOIN stamp_wishlist w ON w.user_id = u.id
+       LEFT JOIN stamp_collection c ON c.user_id = u.id
+       WHERE u.id != $1
+       GROUP BY u.username
+       ORDER BY u.username`,
+      [req.user.user_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// GET /api/stamps/user/:username/wishlist — another user's wishlist slugs
+router.get("/user/:username/wishlist", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT w.slug FROM stamp_wishlist w
+       JOIN users u ON u.id = w.user_id
+       WHERE LOWER(u.username) = LOWER($1)
+       ORDER BY w.added_at`,
+      [req.params.username]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch wishlist" });
+  }
+});
+
+// GET /api/stamps/user/:username/collection — another user's collection slugs
+router.get("/user/:username/collection", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT c.slug FROM stamp_collection c
+       JOIN users u ON u.id = c.user_id
+       WHERE LOWER(u.username) = LOWER($1)
+       ORDER BY c.added_at`,
+      [req.params.username]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch collection" });
+  }
+});
+
 module.exports = router;

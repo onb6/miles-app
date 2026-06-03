@@ -211,6 +211,10 @@ const StampBrowsePage = () => {
   const [view, setView] = useState("all");
   const [togglingWishlist, setTogglingWishlist] = useState(null);
   const [togglingCollection, setTogglingCollection] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [memberWishlist, setMemberWishlist] = useState(new Set());
+  const [memberCollection, setMemberCollection] = useState(new Set());
 
   // Filters — arrays for multi-select
   const [search, setSearch] = useState("");
@@ -224,7 +228,8 @@ const StampBrowsePage = () => {
   const scrollRestoreRef = useRef(null);
 
   useEffect(() => {
-    const onScroll = () => setShowScrollTop(window.scrollY > window.innerHeight);
+    const onScroll = () =>
+      setShowScrollTop(window.scrollY > window.innerHeight);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -267,7 +272,34 @@ const StampBrowsePage = () => {
       .then((r) => r.json())
       .then((slugs) => setCollection(new Set(slugs)))
       .catch(() => {});
+    fetch("/api/stamps/users", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => setMembers(data))
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!selectedMember) {
+      setMemberWishlist(new Set());
+      setMemberCollection(new Set());
+      return;
+    }
+    Promise.all([
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/wishlist`, {
+        credentials: "include",
+      }),
+      fetch(
+        `/api/stamps/user/${encodeURIComponent(selectedMember)}/collection`,
+        { credentials: "include" },
+      ),
+    ])
+      .then(async ([wRes, cRes]) => {
+        const [wSlugs, cSlugs] = await Promise.all([wRes.json(), cRes.json()]);
+        setMemberWishlist(new Set(wSlugs));
+        setMemberCollection(new Set(cSlugs));
+      })
+      .catch(() => {});
+  }, [selectedMember]);
 
   const toggleWishlist = useCallback(
     async (e, slug) => {
@@ -356,6 +388,15 @@ const StampBrowsePage = () => {
     navigate("/login");
   };
 
+  const handleSelectMember = (username) => {
+    if (selectedMember === username) {
+      setSelectedMember(null);
+      setView("all");
+    } else {
+      setSelectedMember(username);
+    }
+  };
+
   const handleStampClick = useCallback(
     (slug) => {
       sessionStorage.setItem(
@@ -400,12 +441,15 @@ const StampBrowsePage = () => {
     filterStates.length
   );
 
+  const activeWishlist = selectedMember ? memberWishlist : wishlist;
+  const activeCollection = selectedMember ? memberCollection : collection;
+
   const displayed = useMemo(() => {
     let base =
       view === "wishlist"
-        ? STAMPS.filter((s) => wishlist.has(s.slug))
+        ? STAMPS.filter((s) => activeWishlist.has(s.slug))
         : view === "collection"
-          ? STAMPS.filter((s) => collection.has(s.slug))
+          ? STAMPS.filter((s) => activeCollection.has(s.slug))
           : STAMPS;
 
     if (search)
@@ -439,20 +483,24 @@ const StampBrowsePage = () => {
     filterTopics,
     filterStates,
     sortDir,
-    wishlist,
-    collection,
+    activeWishlist,
+    activeCollection,
   ]);
 
   const baseCount =
     view === "wishlist"
-      ? wishlist.size
+      ? activeWishlist.size
       : view === "collection"
-        ? collection.size
+        ? activeCollection.size
         : STAMPS.length;
 
   const emptyMessages = {
-    wishlist: "No stamps in your wishlist yet.",
-    collection: "No stamps in your collection yet.",
+    wishlist: selectedMember
+      ? `${selectedMember} hasn't added any stamps to their wishlist yet.`
+      : "No stamps in your wishlist yet.",
+    collection: selectedMember
+      ? `${selectedMember} hasn't added any stamps to their collection yet.`
+      : "No stamps in your collection yet.",
   };
 
   return (
@@ -475,25 +523,55 @@ const StampBrowsePage = () => {
       </div>
 
       <div className="stamp-browse-controls">
-        <div className="view-toggle">
+        <div className="stamp-top-controls">
+          <div className="view-toggle">
+            <button
+              className={`toggle-btn ${view === "all" ? "active" : ""}`}
+              onClick={() => setView("all")}
+            >
+              All Stamps<span className="toggle-count">{STAMPS.length}</span>
+            </button>
+            <button
+              className={`toggle-btn toggle-btn--wishlist ${view === "wishlist" ? "active" : ""}`}
+              onClick={() => setView("wishlist")}
+            >
+              {selectedMember ? `${selectedMember}'s Wishlist` : "My Wishlist"}
+              <span className="toggle-count">{activeWishlist.size}</span>
+            </button>
+            <button
+              className={`toggle-btn toggle-btn--collection ${view === "collection" ? "active" : ""}`}
+              onClick={() => setView("collection")}
+            >
+              {selectedMember ? `${selectedMember}'s Collection` : "My Collection"}
+              <span className="toggle-count">{activeCollection.size}</span>
+            </button>
+          </div>
+
+          <div className="stamp-members-divider" />
+
+          <span className="stamp-members-label">View by user:</span>
+
           <button
-            className={`toggle-btn ${view === "all" ? "active" : ""}`}
-            onClick={() => setView("all")}
+            className={`stamp-member-btn${!selectedMember ? " active" : ""}`}
+            onClick={() => setSelectedMember(null)}
           >
-            All Stamps<span className="toggle-count">{STAMPS.length}</span>
+            Me
+            <span className="stamp-member-counts">
+              {wishlist.size + collection.size}
+            </span>
           </button>
-          <button
-            className={`toggle-btn toggle-btn--wishlist ${view === "wishlist" ? "active" : ""}`}
-            onClick={() => setView("wishlist")}
-          >
-            My Wishlist<span className="toggle-count">{wishlist.size}</span>
-          </button>
-          <button
-            className={`toggle-btn toggle-btn--collection ${view === "collection" ? "active" : ""}`}
-            onClick={() => setView("collection")}
-          >
-            My Collection<span className="toggle-count">{collection.size}</span>
-          </button>
+          {members.map((m) => (
+            <button
+              key={m.username}
+              className={`stamp-member-btn${selectedMember === m.username ? " active" : ""}`}
+              onClick={() => handleSelectMember(m.username)}
+            >
+              {m.username}
+              <span className="stamp-member-counts">
+                {Number(m.collection_count) + Number(m.wishlist_count)}
+              </span>
+            </button>
+          ))}
         </div>
 
         <div className="stamp-filters">
