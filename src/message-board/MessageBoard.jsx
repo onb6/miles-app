@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BiArrowBack } from "react-icons/bi";
 import { useAuth } from "../context/AuthContext";
 import "./MessageBoard.css";
 import { Button, Input } from "reactstrap";
@@ -32,19 +31,32 @@ const MessageBoard = () => {
     setMessages((prev) =>
       prev.map((m) =>
         m.id === messageId
-          ? { ...m, reply_count: (m.reply_count || 0) + 1, latest_reply_at: now }
+          ? {
+              ...m,
+              reply_count: (m.reply_count || 0) + 1,
+              latest_reply_at: now,
+            }
           : m,
       ),
     );
     setReadTimestamps((prev) => ({ ...prev, [messageId]: now }));
-    fetch(`/api/read/thread/${messageId}`, { method: "POST", credentials: "include" }).catch(() => {});
+    fetch(`/api/read/thread/${messageId}`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
   };
 
   const openThread_ = (message) => {
     const prevReadAt = readTimestamps[message.id] || null;
     setOpenThread({ message, unreadSince: prevReadAt });
-    setReadTimestamps((prev) => ({ ...prev, [message.id]: new Date().toISOString() }));
-    fetch(`/api/read/thread/${message.id}`, { method: "POST", credentials: "include" }).catch(() => {});
+    setReadTimestamps((prev) => ({
+      ...prev,
+      [message.id]: new Date().toISOString(),
+    }));
+    fetch(`/api/read/thread/${message.id}`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
   };
 
   const hasUnread = (msg) => {
@@ -59,8 +71,8 @@ const MessageBoard = () => {
         if (!r.ok) throw new Error("Failed to load messages");
         return r.json();
       }),
-      fetch("/api/read/board", { method: "POST", credentials: "include" }).then((r) =>
-        r.ok ? r.json() : {}
+      fetch("/api/read/board", { method: "POST", credentials: "include" }).then(
+        (r) => (r.ok ? r.json() : {}),
       ),
     ])
       .then(([msgs, readState]) => {
@@ -154,8 +166,7 @@ const MessageBoard = () => {
           size="sm"
           onClick={() => navigate("/")}
         >
-          <BiArrowBack className="back-button-icon" />
-          Back
+          Home
         </Button>
         <h2>Message Board</h2>
         <div className="header-user">
@@ -168,7 +179,9 @@ const MessageBoard = () => {
 
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
 
-      <div className={`message-board-content${openThread ? " thread-open" : ""}`}>
+      <div
+        className={`message-board-content${openThread ? " thread-open" : ""}`}
+      >
         {loading ? (
           <p>Loading messages...</p>
         ) : (

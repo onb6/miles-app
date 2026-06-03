@@ -85,6 +85,24 @@ const initDb = async () => {
       PRIMARY KEY (user_id, message_id)
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stamp_wishlist (
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      slug       TEXT NOT NULL,
+      added_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, slug)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stamp_collection (
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      slug       TEXT NOT NULL,
+      added_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, slug)
+    )
+  `);
 };
 
 module.exports = { pool, initDb };

@@ -6,6 +6,8 @@ import LandingPage from "./LandingPage";
 import MessageBoard from "./message-board/MessageBoard";
 import AuthPage from "./pages/AuthPage";
 import OlipopRankingPage from "./pages/OlipopRankingPage";
+import StampBrowsePage from "./pages/StampBrowsePage";
+import StampDetailPage from "./pages/StampDetailPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -40,6 +42,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <OlipopRankingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stamps"
+            element={
+              <ProtectedRoute>
+                <StampBrowsePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stamps/:slug"
+            element={
+              <ProtectedRoute>
+                <StampDetailPage />
               </ProtectedRoute>
             }
           />
