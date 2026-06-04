@@ -9,11 +9,14 @@ import {
   BsSortDown,
   BsSortUp,
   BsPencil,
+  BsGrid3X3Gap,
+  BsTable,
 } from "react-icons/bs";
 import { Button } from "reactstrap";
 import Select from "react-select";
 import { useAuth } from "../context/AuthContext";
 import STAMPS from "../data/stamps.json";
+import { useSwipe } from "../hooks/useSwipe";
 import "./StampBrowsePage.css";
 
 const MONTHS = [
@@ -112,6 +115,9 @@ const ALL_MONTHS = MONTHS.filter((m) =>
 );
 const ALL_STATES = [
   ...new Set(STAMPS.map((s) => getState(s.city)).filter(Boolean)),
+].sort();
+const ALL_CITIES = [
+  ...new Set(STAMPS.map((s) => s.city).filter(Boolean)),
 ].sort();
 
 // react-select option arrays
@@ -231,8 +237,25 @@ const StampBrowsePage = () => {
   const [filterMonths, setFilterMonths] = useState([]);
   const [filterTopics, setFilterTopics] = useState([]);
   const [filterStates, setFilterStates] = useState([]);
+  const [filterCities, setFilterCities] = useState([]);
   const [sortDir, setSortDir] = useState("desc");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [layout, setLayout] = useState("cards");
+
+  const cityOptions = useMemo(() => {
+    const base = filterStates.length
+      ? ALL_CITIES.filter((c) => filterStates.includes(getState(c)))
+      : ALL_CITIES;
+    return base.map((c) => ({ value: c, label: c }));
+  }, [filterStates]);
+
+  // Drop any selected cities that no longer match the active state filter
+  useEffect(() => {
+    if (filterStates.length === 0) return;
+    setFilterCities((prev) =>
+      prev.filter((c) => filterStates.includes(getState(c))),
+    );
+  }, [filterStates]);
 
   const scrollRestoreRef = useRef(null);
 
@@ -256,8 +279,11 @@ const StampBrowsePage = () => {
       setFilterMonths(saved.filterMonths ?? []);
       setFilterTopics(saved.filterTopics ?? []);
       setFilterStates(saved.filterStates ?? []);
+      setFilterCities(saved.filterCities ?? []);
       setSortDir(saved.sortDir ?? "desc");
       setView(saved.view ?? "all");
+      setSelectedMember(saved.selectedMember ?? null);
+      setLayout(saved.layout ?? "cards");
       scrollRestoreRef.current = saved.scrollY ?? 0;
     } catch {}
   }, [location.state?.fromDetail]);
@@ -501,8 +527,11 @@ const StampBrowsePage = () => {
           filterMonths,
           filterTopics,
           filterStates,
+          filterCities,
           sortDir,
           view,
+          selectedMember,
+          layout,
           scrollY: window.scrollY,
         }),
       );
@@ -514,8 +543,11 @@ const StampBrowsePage = () => {
       filterMonths,
       filterTopics,
       filterStates,
+      filterCities,
       sortDir,
       view,
+      selectedMember,
+      layout,
       navigate,
     ],
   );
@@ -526,13 +558,15 @@ const StampBrowsePage = () => {
     setFilterMonths([]);
     setFilterTopics([]);
     setFilterStates([]);
+    setFilterCities([]);
   };
   const hasFilters = !!(
     search ||
     filterYears.length ||
     filterMonths.length ||
     filterTopics.length ||
-    filterStates.length
+    filterStates.length ||
+    filterCities.length
   );
 
   const activeWishlist = selectedMember ? memberWishlist : wishlist;
@@ -563,6 +597,8 @@ const StampBrowsePage = () => {
       );
     if (filterStates.length)
       base = base.filter((s) => filterStates.includes(getState(s.city)));
+    if (filterCities.length)
+      base = base.filter((s) => filterCities.includes(s.city));
 
     const TBA = new Date("9999-12-31");
     return [...base].sort((a, b) => {
@@ -577,6 +613,7 @@ const StampBrowsePage = () => {
     filterMonths,
     filterTopics,
     filterStates,
+    filterCities,
     sortDir,
     activeWishlist,
     activeCollection,
@@ -674,85 +711,99 @@ const StampBrowsePage = () => {
 
         {view !== "goals" && (
           <div className="stamp-filters">
-            <div className="stamp-search-wrap">
-              <input
-                className="stamp-search"
-                type="search"
-                placeholder="Search stamps…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+            <input
+              className="stamp-search"
+              type="search"
+              placeholder="Search stamps…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className="stamp-filter-row">
+              <div className="stamp-select-wrap">
+                <Select
+                  isMulti
+                  isSearchable
+                  options={YEAR_OPTIONS}
+                  value={YEAR_OPTIONS.filter((o) =>
+                    filterYears.includes(o.value),
+                  )}
+                  onChange={(sel) => setFilterYears(sel.map((o) => o.value))}
+                  placeholder="Year"
+                  styles={SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
+              </div>
 
-            <div className="stamp-select-wrap">
-              <Select
-                isMulti
-                isSearchable
-                options={YEAR_OPTIONS}
-                value={YEAR_OPTIONS.filter((o) =>
-                  filterYears.includes(o.value),
-                )}
-                onChange={(sel) => setFilterYears(sel.map((o) => o.value))}
-                placeholder="Year"
-                styles={SELECT_STYLES}
-                classNamePrefix="rs"
-              />
-            </div>
+              <div className="stamp-select-wrap">
+                <Select
+                  isMulti
+                  isSearchable
+                  options={MONTH_OPTIONS}
+                  value={MONTH_OPTIONS.filter((o) =>
+                    filterMonths.includes(o.value),
+                  )}
+                  onChange={(sel) => setFilterMonths(sel.map((o) => o.value))}
+                  placeholder="Month"
+                  styles={SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
+              </div>
 
-            <div className="stamp-select-wrap">
-              <Select
-                isMulti
-                isSearchable
-                options={MONTH_OPTIONS}
-                value={MONTH_OPTIONS.filter((o) =>
-                  filterMonths.includes(o.value),
-                )}
-                onChange={(sel) => setFilterMonths(sel.map((o) => o.value))}
-                placeholder="Month"
-                styles={SELECT_STYLES}
-                classNamePrefix="rs"
-              />
-            </div>
+              <div className="stamp-select-wrap stamp-select-wrap--wide">
+                <Select
+                  isMulti
+                  isSearchable
+                  options={STATE_OPTIONS}
+                  value={STATE_OPTIONS.filter((o) =>
+                    filterStates.includes(o.value),
+                  )}
+                  onChange={(sel) => setFilterStates(sel.map((o) => o.value))}
+                  placeholder="State"
+                  styles={SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
+              </div>
 
-            <div className="stamp-select-wrap stamp-select-wrap--wide">
-              <Select
-                isMulti
-                isSearchable
-                options={TOPIC_OPTIONS}
-                value={TOPIC_OPTIONS.filter((o) =>
-                  filterTopics.includes(o.value),
-                )}
-                onChange={(sel) => setFilterTopics(sel.map((o) => o.value))}
-                placeholder="Category"
-                styles={SELECT_STYLES}
-                classNamePrefix="rs"
-              />
-            </div>
+              <div className="stamp-select-wrap stamp-select-wrap--wide">
+                <Select
+                  isMulti
+                  isSearchable
+                  options={cityOptions}
+                  value={cityOptions.filter((o) =>
+                    filterCities.includes(o.value),
+                  )}
+                  onChange={(sel) => setFilterCities(sel.map((o) => o.value))}
+                  placeholder="City"
+                  styles={SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
+              </div>
 
-            <div className="stamp-select-wrap stamp-select-wrap--wide">
-              <Select
-                isMulti
-                isSearchable
-                options={STATE_OPTIONS}
-                value={STATE_OPTIONS.filter((o) =>
-                  filterStates.includes(o.value),
-                )}
-                onChange={(sel) => setFilterStates(sel.map((o) => o.value))}
-                placeholder="State"
-                styles={SELECT_STYLES}
-                classNamePrefix="rs"
-              />
-            </div>
+              <div className="stamp-select-wrap stamp-select-wrap--wide">
+                <Select
+                  isMulti
+                  isSearchable
+                  options={TOPIC_OPTIONS}
+                  value={TOPIC_OPTIONS.filter((o) =>
+                    filterTopics.includes(o.value),
+                  )}
+                  onChange={(sel) => setFilterTopics(sel.map((o) => o.value))}
+                  placeholder="Category"
+                  styles={SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
+              </div>
 
-            {hasFilters && (
-              <button
-                className="stamp-clear-btn"
-                onClick={clearFilters}
-                title="Clear filters"
-              >
-                <BsX /> Clear
-              </button>
-            )}
+              {hasFilters && (
+                <button
+                  className="stamp-clear-btn"
+                  onClick={clearFilters}
+                  title="Clear filters"
+                >
+                  <BsX /> Clear
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -771,14 +822,34 @@ const StampBrowsePage = () => {
               </>
             )}
           </span>
-          <button
-            className="stamp-sort-btn"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-            title={sortDir === "asc" ? "Oldest first" : "Newest first"}
-          >
-            {sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
-            {sortDir === "desc" ? "Newest first" : "Oldest first"}
-          </button>
+          <div className="stamp-results-actions">
+            <div className="layout-toggle">
+              <button
+                className={`stamp-layout-btn${layout === "cards" ? " active" : ""}`}
+                onClick={() => setLayout("cards")}
+                title="Card view"
+                aria-label="Card view"
+              >
+                <BsGrid3X3Gap />
+              </button>
+              <button
+                className={`stamp-layout-btn${layout === "table" ? " active" : ""}`}
+                onClick={() => setLayout("table")}
+                title="Table view"
+                aria-label="Table view"
+              >
+                <BsTable />
+              </button>
+            </div>
+            <button
+              className="stamp-sort-btn"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title={sortDir === "asc" ? "Oldest first" : "Newest first"}
+            >
+              {sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
+              {sortDir === "desc" ? "Newest first" : "Oldest first"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -822,6 +893,39 @@ const StampBrowsePage = () => {
             </>
           )}
         </div>
+      ) : layout === "table" ? (
+        <div className="stamp-table-wrap">
+          <div className="stamp-table-inner">
+            <table className="stamp-table">
+              <thead>
+                <tr>
+                  <th className="stamp-th stamp-th--thumb"></th>
+                  <th className="stamp-th">Name</th>
+                  <th className="stamp-th stamp-th--city">City</th>
+                  <th className="stamp-th stamp-th--date">Date</th>
+                  <th className="stamp-th stamp-th--denom">Denomination</th>
+                  <th className="stamp-th">Category</th>
+                  <th className="stamp-th stamp-th--actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.map((stamp) => (
+                  <StampTableRow
+                    key={stamp.slug}
+                    stamp={stamp}
+                    wishlisted={wishlist.has(stamp.slug)}
+                    collected={collection.has(stamp.slug)}
+                    togglingWishlist={togglingWishlist === stamp.slug}
+                    togglingCollection={togglingCollection === stamp.slug}
+                    onToggleWishlist={toggleWishlist}
+                    onToggleCollection={toggleCollection}
+                    onClick={() => handleStampClick(stamp.slug)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
         <div className="stamp-grid">
           {displayed.map((stamp) => (
@@ -862,62 +966,183 @@ const StampCard = ({
   onToggleWishlist,
   onToggleCollection,
   onClick,
-}) => (
-  <div
-    className="stamp-card"
-    onClick={onClick}
-    role="button"
-    tabIndex={0}
-    onKeyDown={(e) => e.key === "Enter" && onClick()}
-  >
-    <div className="stamp-frame">
-      <div className="stamp-img-wrap">
-        <img
-          src={stamp.img}
-          alt={stamp.name}
-          className="stamp-img"
-          loading="lazy"
-        />
+}) => {
+  const images = stamp.images?.length ? stamp.images : [stamp.img];
+  const [imgIdx, setImgIdx] = useState(0);
+
+  const prevImg = (e) => {
+    e.stopPropagation();
+    setImgIdx((i) => (i - 1 + images.length) % images.length);
+  };
+
+  const nextImg = (e) => {
+    e.stopPropagation();
+    setImgIdx((i) => (i + 1) % images.length);
+  };
+
+  const swipeHandlers = useSwipe(
+    () => setImgIdx((i) => (i + 1) % images.length),
+    () => setImgIdx((i) => (i - 1 + images.length) % images.length),
+  );
+
+  return (
+    <div
+      className="stamp-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+    >
+      <div className="stamp-frame">
+        <div className="stamp-img-wrap" {...swipeHandlers}>
+          <img
+            src={images[imgIdx]}
+            alt={stamp.name}
+            className="stamp-img"
+            loading="lazy"
+          />
+          {images.length > 1 && (
+            <>
+              <button
+                className="stamp-card-nav stamp-card-nav--prev"
+                onClick={prevImg}
+                aria-label="Previous image"
+              >
+                ‹
+              </button>
+              <button
+                className="stamp-card-nav stamp-card-nav--next"
+                onClick={nextImg}
+                aria-label="Next image"
+              >
+                ›
+              </button>
+              <div className="stamp-card-dots">
+                {images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`stamp-card-dot${i === imgIdx ? " active" : ""}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="stamp-card-body">
+        <p className="stamp-card-name">{stamp.name}</p>
+        <p className="stamp-card-meta">
+          {stamp.issued || "Date TBA"}
+          {stamp.city && <> · {stamp.city}</>}
+        </p>
+        {stamp.topics?.length > 0 && (
+          <div className="stamp-card-topics">
+            {stamp.topics.slice(0, 2).map((t) => (
+              <span key={t} className="stamp-topic-tag">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="stamp-card-actions">
+        <button
+          className={`stamp-action-btn stamp-heart-btn ${wishlisted ? "wishlisted" : ""}`}
+          onClick={(e) => onToggleWishlist(e, stamp.slug)}
+          disabled={togglingWishlist}
+          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          {wishlisted ? <BsHeartFill /> : <BsHeart />}
+        </button>
+        <button
+          className={`stamp-action-btn stamp-check-btn ${collected ? "collected" : ""}`}
+          onClick={(e) => onToggleCollection(e, stamp.slug)}
+          disabled={togglingCollection}
+          aria-label={
+            collected ? "Remove from collection" : "Add to collection"
+          }
+          title={collected ? "Remove from collection" : "Add to collection"}
+        >
+          {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
+        </button>
       </div>
     </div>
-    <div className="stamp-card-body">
-      <p className="stamp-card-name">{stamp.name}</p>
-      <p className="stamp-card-meta">
-        {stamp.issued || "Date TBA"}
-        {stamp.city && <> · {stamp.city}</>}
-      </p>
-      {stamp.topics?.length > 0 && (
-        <div className="stamp-card-topics">
-          {stamp.topics.slice(0, 2).map((t) => (
-            <span key={t} className="stamp-topic-tag">
-              {t}
-            </span>
-          ))}
+  );
+};
+
+const StampTableRow = ({
+  stamp,
+  wishlisted,
+  collected,
+  togglingWishlist,
+  togglingCollection,
+  onToggleWishlist,
+  onToggleCollection,
+  onClick,
+}) => {
+  const img = stamp.images?.[0] ?? stamp.img;
+  return (
+    <tr
+      className="stamp-tr"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+    >
+      <td className="stamp-td stamp-td--thumb">
+        <img
+          src={img}
+          alt={stamp.name}
+          className="stamp-table-img"
+          loading="lazy"
+        />
+      </td>
+      <td className="stamp-td stamp-td--name">{stamp.name}</td>
+      <td className="stamp-td stamp-td--city">{stamp.city ?? "—"}</td>
+      <td className="stamp-td stamp-td--date">{stamp.issued ?? "TBA"}</td>
+      <td className="stamp-td stamp-td--denom">{stamp.denomination ?? "—"}</td>
+      <td className="stamp-td stamp-td--topics">
+        {stamp.topics?.length > 0 && (
+          <div className="stamp-table-topics">
+            {stamp.topics.slice(0, 3).map((t) => (
+              <span key={t} className="stamp-topic-tag">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </td>
+      <td
+        className="stamp-td stamp-td--actions"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="stamp-td-actions-wrap">
+          <button
+            className={`stamp-action-btn stamp-heart-btn ${wishlisted ? "wishlisted" : ""}`}
+            onClick={(e) => onToggleWishlist(e, stamp.slug)}
+            disabled={togglingWishlist}
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            {wishlisted ? <BsHeartFill /> : <BsHeart />}
+          </button>
+          <button
+            className={`stamp-action-btn stamp-check-btn ${collected ? "collected" : ""}`}
+            onClick={(e) => onToggleCollection(e, stamp.slug)}
+            disabled={togglingCollection}
+            aria-label={
+              collected ? "Remove from collection" : "Add to collection"
+            }
+            title={collected ? "Remove from collection" : "Add to collection"}
+          >
+            {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
+          </button>
         </div>
-      )}
-    </div>
-    <div className="stamp-card-actions">
-      <button
-        className={`stamp-action-btn stamp-heart-btn ${wishlisted ? "wishlisted" : ""}`}
-        onClick={(e) => onToggleWishlist(e, stamp.slug)}
-        disabled={togglingWishlist}
-        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-      >
-        {wishlisted ? <BsHeartFill /> : <BsHeart />}
-      </button>
-      <button
-        className={`stamp-action-btn stamp-check-btn ${collected ? "collected" : ""}`}
-        onClick={(e) => onToggleCollection(e, stamp.slug)}
-        disabled={togglingCollection}
-        aria-label={collected ? "Remove from collection" : "Add to collection"}
-        title={collected ? "Remove from collection" : "Add to collection"}
-      >
-        {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
-      </button>
-    </div>
-  </div>
-);
+      </td>
+    </tr>
+  );
+};
 
 function getFilterLabel({ filter_type, filter_value }) {
   if (filter_type === "state") return STATE_NAMES[filter_value] ?? filter_value;

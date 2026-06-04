@@ -10,7 +10,8 @@
       "Bash(curl -sL \"https://www.stampsforever.com/stamps/american-bison/__data.json\" -H \"User-Agent: Mozilla/5.0\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2\\)[:1000]\\)\")",
       "Bash(mkdir -p /Users/oliviablier/for-miles/scripts)",
-      "Bash(mkdir -p /Users/oliviablier/for-miles/src/data)"
+      "Bash(mkdir -p /Users/oliviablier/for-miles/src/data)",
+      "WebFetch(domain:www.stampsforever.com)"
     ]
   }
 }

@@ -368,16 +368,8 @@
     flex-direction: column;
   }
 
-  .stamp-detail-action-btn span {
-    display: none;
-  }
-
-  .stamp-detail-action-btn {
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    justify-content: center;
+  .stamp-detail-action-btns {
+    flex-direction: row;
   }
 
   .stamp-detail-container .stamp-browse-header {

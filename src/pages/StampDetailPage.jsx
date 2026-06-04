@@ -9,6 +9,7 @@ import {
 } from "react-icons/bs";
 import { Button } from "reactstrap";
 import { useAuth } from "../context/AuthContext";
+import { useSwipe } from "../hooks/useSwipe";
 import STAMPS from "../data/stamps.json";
 import "./StampDetailPage.css";
 
@@ -25,6 +26,10 @@ const StampDetailPage = () => {
   const [togglingWishlist, setTogglingWishlist] = useState(false);
   const [togglingCollection, setTogglingCollection] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     fetch("/api/stamps/wishlist", { credentials: "include" })
@@ -94,6 +99,8 @@ const StampDetailPage = () => {
     [images.length]
   );
 
+  const swipeHandlers = useSwipe(nextImg, prevImg);
+
   useEffect(() => {
     if (images.length < 2) return;
     const onKey = (e) => {
@@ -162,7 +169,7 @@ const StampDetailPage = () => {
           Back
         </Button>
         <div className="stamp-detail-images">
-          <div className="stamp-detail-frame">
+          <div className="stamp-detail-frame" {...swipeHandlers}>
             <img
               src={images[activeImg]}
               alt={stamp.name}
