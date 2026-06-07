@@ -7,6 +7,8 @@ import { Button } from "reactstrap";
 import { useAuth } from "./context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const LandingPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -35,8 +37,8 @@ const LandingPage = () => {
       cardImg: OlipopImg,
     },
     {
-      title: "Philately Central!",
-      subtitle: "Browse stamps and build your wishlist!",
+      title: "Stamp Collecting",
+      subtitle: "Philately central! ;)",
       text: "2026 USPS stamps with all the details",
       buttonText: "Get Stampin'",
       buttonDisabled: false,
@@ -48,7 +50,7 @@ const LandingPage = () => {
   return (
     <div className="landing-page-container">
       <div className="landing-page-header">
-        <span className="header-username">{user?.username}</span>
+        <span className="header-username">{cap(user?.username)}</span>
         <Button color="outline-secondary" size="sm" onClick={handleLogout}>
           Log out
         </Button>

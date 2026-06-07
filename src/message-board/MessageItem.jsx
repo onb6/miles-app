@@ -14,6 +14,8 @@ import {
 } from "reactstrap";
 import "./MessageBoard.css";
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
 
 function linkify(text) {
@@ -76,7 +78,7 @@ const MessageItem = ({
             className="text-muted"
             style={{ fontSize: "0.8rem", margin: 0 }}
           >
-            {message.author} &middot;{" "}
+            {cap(message.author)} &middot;{" "}
             {new Date(message.created_at).toLocaleString()}
           </CardSubtitle>
           {canAct && !editing && (

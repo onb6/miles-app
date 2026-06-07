@@ -4,7 +4,15 @@ import { Button, Input } from "reactstrap";
 import MessageItem from "./MessageItem";
 import "./ThreadPanel.css";
 
-const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted }) => {
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+const ThreadPanel = ({
+  message,
+  unreadSince,
+  currentUser,
+  onClose,
+  onReplyPosted,
+}) => {
   const isUnread = (reply) => {
     if (reply.user_id === currentUser?.user_id) return false;
     return !unreadSince || new Date(reply.created_at) > new Date(unreadSince);
@@ -44,7 +52,10 @@ const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted
   useEffect(() => {
     fetch(`/api/messages/${message.id}/replies`, { credentials: "include" })
       .then((r) => r.json())
-      .then((data) => { setReplies(data); setLoading(false); })
+      .then((data) => {
+        setReplies(data);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [message.id]);
 
@@ -109,12 +120,14 @@ const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted
         {message.image_url && (
           <img src={message.image_url} alt="" className="thread-root-img" />
         )}
-        <p className="thread-root-author">{message.author}</p>
+        <p className="thread-root-author">{cap(message.author)}</p>
         <p className="thread-root-content">{message.content}</p>
       </div>
 
       <div className="thread-replies-header">
-        {loading ? "" : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
+        {loading
+          ? ""
+          : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
       </div>
 
       <div className="thread-replies">
@@ -126,8 +139,16 @@ const ThreadPanel = ({ message, unreadSince, currentUser, onClose, onReplyPosted
               {isUnread(reply) && <span className="thread-reply-unread-dot" />}
               <MessageItem
                 message={reply}
-                onEdit={reply.user_id === currentUser?.user_id ? handleEditReply : null}
-                onDelete={reply.user_id === currentUser?.user_id ? handleDeleteReply : null}
+                onEdit={
+                  reply.user_id === currentUser?.user_id
+                    ? handleEditReply
+                    : null
+                }
+                onDelete={
+                  reply.user_id === currentUser?.user_id
+                    ? handleDeleteReply
+                    : null
+                }
               />
             </div>
           ))

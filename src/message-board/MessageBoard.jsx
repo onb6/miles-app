@@ -6,6 +6,8 @@ import { Button, Input } from "reactstrap";
 import MessageItem from "./MessageItem";
 import ThreadPanel from "./ThreadPanel";
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const MessageBoard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -170,7 +172,7 @@ const MessageBoard = () => {
         </Button>
         <h2>Message Board</h2>
         <div className="header-user">
-          <span className="header-username">{user?.username}</span>
+          <span className="header-username">{cap(user?.username)}</span>
           <Button color="outline-secondary" size="sm" onClick={handleLogout}>
             Log out
           </Button>

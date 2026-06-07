@@ -21,6 +21,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import "./OlipopRankingPage.css";
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const CDN = "https://drinkolipop.com/cdn/shop/files";
 const FLAVORS = [
   {
@@ -280,7 +282,7 @@ const OlipopRankingPage = () => {
         </Button>
         <h2>Olipop Rankings</h2>
         <div className="header-user">
-          <span className="header-username">{user?.username}</span>
+          <span className="header-username">{cap(user?.username)}</span>
           <Button color="outline-secondary" size="sm" onClick={handleLogout}>
             Log out
           </Button>
@@ -396,7 +398,7 @@ const OlipopRankingPage = () => {
             <div className="all-rankings-grid">
               {allRankings.slice(0, 2).map(({ username, flavors }) => (
                 <div key={username} className="user-ranking-card">
-                  <p className="user-ranking-name">{username}'s Ranking</p>
+                  <p className="user-ranking-name">{cap(username)}'s Ranking</p>
 
                   {/* Podium: top 3 */}
                   <div className="ranking-podium">

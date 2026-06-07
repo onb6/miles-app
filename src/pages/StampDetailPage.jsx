@@ -13,6 +13,8 @@ import { useSwipe } from "../hooks/useSwipe";
 import STAMPS from "../data/stamps.json";
 import "./StampDetailPage.css";
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const STAMP_MAP = Object.fromEntries(STAMPS.map((s) => [s.slug, s]));
 
 const StampDetailPage = () => {
@@ -87,16 +89,18 @@ const StampDetailPage = () => {
   };
 
   const images = stamp
-    ? stamp.images?.length > 0 ? stamp.images : [stamp.img].filter(Boolean)
+    ? stamp.images?.length > 0
+      ? stamp.images
+      : [stamp.img].filter(Boolean)
     : [];
 
   const prevImg = useCallback(
     () => setActiveImg((i) => (i - 1 + images.length) % images.length),
-    [images.length]
+    [images.length],
   );
   const nextImg = useCallback(
     () => setActiveImg((i) => (i + 1) % images.length),
-    [images.length]
+    [images.length],
   );
 
   const swipeHandlers = useSwipe(nextImg, prevImg);
@@ -123,7 +127,7 @@ const StampDetailPage = () => {
             <BiArrowBack style={{ marginRight: 6 }} />
             Back
           </Button>
-          <h2>Philately Central!</h2>
+          <h2>Stamp Collecting</h2>
           <div />
         </div>
         <div className="stamp-empty">
@@ -148,9 +152,9 @@ const StampDetailPage = () => {
         >
           Home
         </Button>
-        <h2>Philately Central!</h2>
+        <h2>Stamp Collecting</h2>
         <div className="header-user">
-          <span className="header-username">{user?.username}</span>
+          <span className="header-username">{cap(user?.username)}</span>
           <Button color="outline-secondary" size="sm" onClick={handleLogout}>
             Log out
           </Button>
@@ -177,8 +181,20 @@ const StampDetailPage = () => {
             />
             {images.length > 1 && (
               <>
-                <button className="stamp-img-arrow stamp-img-arrow--prev" onClick={prevImg} aria-label="Previous image">&#8249;</button>
-                <button className="stamp-img-arrow stamp-img-arrow--next" onClick={nextImg} aria-label="Next image">&#8250;</button>
+                <button
+                  className="stamp-img-arrow stamp-img-arrow--prev"
+                  onClick={prevImg}
+                  aria-label="Previous image"
+                >
+                  &#8249;
+                </button>
+                <button
+                  className="stamp-img-arrow stamp-img-arrow--next"
+                  onClick={nextImg}
+                  aria-label="Next image"
+                >
+                  &#8250;
+                </button>
               </>
             )}
           </div>
@@ -292,6 +308,17 @@ const StampDetailPage = () => {
               <h3 className="stamp-desc-heading">About this Stamp</h3>
               <p>{stamp.description}</p>
             </div>
+          )}
+
+          {stamp.usps_url && (
+            <a
+              href={stamp.usps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="stamp-usps-link"
+            >
+              Buy on USPS Store →
+            </a>
           )}
         </div>
       </div>

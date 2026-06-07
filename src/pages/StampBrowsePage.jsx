@@ -98,6 +98,8 @@ const NORMALIZE_STATE = {
   "Washington DC": "DC",
 };
 
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 function getState(city) {
   const raw = city?.split(", ").at(-1) ?? null;
   if (!raw) return null;
@@ -628,10 +630,10 @@ const StampBrowsePage = () => {
 
   const emptyMessages = {
     wishlist: selectedMember
-      ? `${selectedMember} hasn't added any stamps to their wishlist yet.`
+      ? `${cap(selectedMember)} hasn't added any stamps to their wishlist yet.`
       : "No stamps in your wishlist yet.",
     collection: selectedMember
-      ? `${selectedMember} hasn't added any stamps to their collection yet.`
+      ? `${cap(selectedMember)} hasn't added any stamps to their collection yet.`
       : "No stamps in your collection yet.",
   };
 
@@ -645,9 +647,9 @@ const StampBrowsePage = () => {
         >
           Home
         </Button>
-        <h2>Philately Central!</h2>
+        <h2>Stamp Collecting</h2>
         <div className="header-user">
-          <span className="header-username">{user?.username}</span>
+          <span className="header-username">{cap(user?.username)}</span>
           <Button color="outline-secondary" size="sm" onClick={handleLogout}>
             Log out
           </Button>
@@ -667,7 +669,7 @@ const StampBrowsePage = () => {
               className={`toggle-btn toggle-btn--wishlist ${view === "wishlist" ? "active" : ""}`}
               onClick={() => setView("wishlist")}
             >
-              {selectedMember ? `${selectedMember}'s Wishlist` : "My Wishlist"}
+              {selectedMember ? `${cap(selectedMember)}'s Wishlist` : "My Wishlist"}
               <span className="toggle-count">{activeWishlist.size}</span>
             </button>
             <button
@@ -675,7 +677,7 @@ const StampBrowsePage = () => {
               onClick={() => setView("collection")}
             >
               {selectedMember
-                ? `${selectedMember}'s Collection`
+                ? `${cap(selectedMember)}'s Collection`
                 : "My Collection"}
               <span className="toggle-count">{activeCollection.size}</span>
             </button>
@@ -683,7 +685,7 @@ const StampBrowsePage = () => {
               className={`toggle-btn toggle-btn--goals ${view === "goals" ? "active" : ""}`}
               onClick={() => setView("goals")}
             >
-              {selectedMember ? `${selectedMember}'s Goals` : "My Goals"}
+              {selectedMember ? `${cap(selectedMember)}'s Goals` : "My Goals"}
               <span className="toggle-count">{activeGoals.length}</span>
             </button>
           </div>
@@ -704,7 +706,7 @@ const StampBrowsePage = () => {
               className={`stamp-member-btn${selectedMember === m.username ? " active" : ""}`}
               onClick={() => handleSelectMember(m.username)}
             >
-              {m.username}
+              {cap(m.username)}
             </button>
           ))}
         </div>
@@ -967,10 +969,13 @@ const StampCard = ({
   onToggleCollection,
   onClick,
 }) => {
-  const base = stamp.images?.length ? stamp.images : [stamp.img].filter(Boolean);
-  const images = stamp.sheet_img && !base.includes(stamp.sheet_img)
-    ? [...base, stamp.sheet_img]
-    : base;
+  const base = stamp.images?.length
+    ? stamp.images
+    : [stamp.img].filter(Boolean);
+  const images =
+    stamp.sheet_img && !base.includes(stamp.sheet_img)
+      ? [...base, stamp.sheet_img]
+      : base;
   const [imgIdx, setImgIdx] = useState(0);
 
   const prevImg = (e) => {
