@@ -315,6 +315,31 @@
   margin: 0;
 }
 
+/* Full sheet image */
+.stamp-sheet-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stamp-sheet-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+  margin: 0;
+}
+
+.stamp-sheet-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
 /* External link */
 .stamp-usps-link {
   font-size: 0.85rem;

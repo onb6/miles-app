@@ -195,6 +195,16 @@ const StampDetailPage = () => {
               ))}
             </div>
           )}
+          {stamp.sheet_img && (
+            <div className="stamp-sheet-wrap">
+              <p className="stamp-sheet-label">Full Sheet</p>
+              <img
+                src={stamp.sheet_img}
+                alt={`${stamp.name} full sheet`}
+                className="stamp-sheet-img"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right: info */}

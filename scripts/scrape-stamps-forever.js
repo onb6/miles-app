@@ -151,6 +151,13 @@ function mapStamp(d) {
   else if (rateType === "Forever") denomination = "Forever";
   else if (rateType) denomination = rateType;
 
+  // Sheet / pane image
+  const pane = d.stamp_pane ?? null;
+  const sheetImg = pane?.derivatives?.medium?.path
+    ?? pane?.derivatives?.large?.path
+    ?? pane?.path
+    ?? null;
+
   return {
     slug: d.slug,
     name: d.name ?? null,
@@ -165,6 +172,7 @@ function mapStamp(d) {
     designers,
     img: imgUrl,
     images: allImages,
+    sheet_img: sheetImg,
     description: stripHtml(d.about) || stripHtml(d.seo_summary) || null,
     url: `https://www.stampsforever.com/stamps/${d.slug}`,
   };
