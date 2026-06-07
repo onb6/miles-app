@@ -122,6 +122,16 @@ const initDb = async () => {
       filter_value TEXT NOT NULL
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stamp_custom_order (
+      user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      list_type TEXT NOT NULL CHECK (list_type IN ('wishlist', 'collection')),
+      slug      TEXT NOT NULL,
+      position  INTEGER NOT NULL,
+      PRIMARY KEY (user_id, list_type, slug)
+    )
+  `);
 };
 
 module.exports = { pool, initDb };

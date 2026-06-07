@@ -106,6 +106,86 @@ router.delete("/collection/:slug", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/stamps/wishlist/order — custom order for the current user's wishlist
+router.get("/wishlist/order", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT slug FROM stamp_custom_order WHERE user_id = $1 AND list_type = 'wishlist' ORDER BY position",
+      [req.user.user_id]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
+// PUT /api/stamps/wishlist/order — save custom order for the current user's wishlist
+router.put("/wishlist/order", requireAuth, async (req, res) => {
+  const { slugs } = req.body;
+  if (!Array.isArray(slugs)) return res.status(400).json({ error: "slugs array required" });
+  const { user_id } = req.user;
+  try {
+    await pool.query("BEGIN");
+    await pool.query(
+      "DELETE FROM stamp_custom_order WHERE user_id = $1 AND list_type = 'wishlist'",
+      [user_id]
+    );
+    for (let i = 0; i < slugs.length; i++) {
+      await pool.query(
+        "INSERT INTO stamp_custom_order (user_id, list_type, slug, position) VALUES ($1, 'wishlist', $2, $3)",
+        [user_id, slugs[i], i]
+      );
+    }
+    await pool.query("COMMIT");
+    res.json({ ok: true });
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ error: "Failed to save order" });
+  }
+});
+
+// GET /api/stamps/collection/order — custom order for the current user's collection
+router.get("/collection/order", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT slug FROM stamp_custom_order WHERE user_id = $1 AND list_type = 'collection' ORDER BY position",
+      [req.user.user_id]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
+// PUT /api/stamps/collection/order — save custom order for the current user's collection
+router.put("/collection/order", requireAuth, async (req, res) => {
+  const { slugs } = req.body;
+  if (!Array.isArray(slugs)) return res.status(400).json({ error: "slugs array required" });
+  const { user_id } = req.user;
+  try {
+    await pool.query("BEGIN");
+    await pool.query(
+      "DELETE FROM stamp_custom_order WHERE user_id = $1 AND list_type = 'collection'",
+      [user_id]
+    );
+    for (let i = 0; i < slugs.length; i++) {
+      await pool.query(
+        "INSERT INTO stamp_custom_order (user_id, list_type, slug, position) VALUES ($1, 'collection', $2, $3)",
+        [user_id, slugs[i], i]
+      );
+    }
+    await pool.query("COMMIT");
+    res.json({ ok: true });
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ error: "Failed to save order" });
+  }
+});
+
 // GET /api/stamps/goals — current user's goals with their linked filters
 router.get("/goals", requireAuth, async (req, res) => {
   try {
@@ -263,6 +343,40 @@ router.get("/users", requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// GET /api/stamps/user/:username/wishlist/order — another user's custom wishlist order
+router.get("/user/:username/wishlist/order", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT o.slug FROM stamp_custom_order o
+       JOIN users u ON u.id = o.user_id
+       WHERE LOWER(u.username) = LOWER($1) AND o.list_type = 'wishlist'
+       ORDER BY o.position`,
+      [req.params.username]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
+// GET /api/stamps/user/:username/collection/order — another user's custom collection order
+router.get("/user/:username/collection/order", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT o.slug FROM stamp_custom_order o
+       JOIN users u ON u.id = o.user_id
+       WHERE LOWER(u.username) = LOWER($1) AND o.list_type = 'collection'
+       ORDER BY o.position`,
+      [req.params.username]
+    );
+    res.json(rows.map((r) => r.slug));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch order" });
   }
 });
 

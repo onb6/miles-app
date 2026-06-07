@@ -1089,3 +1089,116 @@
     display: none;
   }
 }
+
+/* ── Reorder controls ─────────────────────────────────────────── */
+.stamp-reorder-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  background: white;
+  border: 1px solid rgba(40, 110, 132, 0.22);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #286e84;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.15s, border-color 0.15s;
+}
+.stamp-reorder-btn:hover {
+  background: rgba(40, 110, 132, 0.06);
+  border-color: #286e84;
+}
+
+.stamp-reorder-save {
+  height: 32px;
+  padding: 0 14px;
+  background: #286e84;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+.stamp-reorder-save:hover:not(:disabled) {
+  background: #1a3a44;
+}
+.stamp-reorder-save:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.stamp-reorder-cancel {
+  height: 32px;
+  padding: 0 10px;
+  background: white;
+  border: 1px solid rgba(40, 110, 132, 0.22);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #6c757d;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+.stamp-reorder-cancel:hover {
+  background: #f8f9fa;
+}
+
+/* ── Sortable card wrapper ────────────────────────────────────── */
+.sortable-card-wrap {
+  position: relative;
+}
+.sortable-card-wrap .stamp-card {
+  pointer-events: none;
+  cursor: default;
+}
+.sortable-card-wrap .stamp-card:hover {
+  transform: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.stamp-drag-handle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  border: 1px solid rgba(40, 110, 132, 0.2);
+  color: #286e84;
+  cursor: grab;
+  font-size: 1rem;
+  touch-action: none;
+  pointer-events: all;
+}
+.stamp-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ── Drag handle column in table ─────────────────────────────── */
+.stamp-th--drag,
+.stamp-td--drag {
+  width: 28px;
+  padding: 0 4px 0 14px;
+  color: #adb5bd;
+  cursor: grab;
+  touch-action: none;
+}
+.stamp-td--drag:active {
+  cursor: grabbing;
+}
+.stamp-drag-icon {
+  font-size: 1.1rem;
+  display: block;
+}

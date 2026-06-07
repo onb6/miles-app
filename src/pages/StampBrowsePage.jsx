@@ -11,7 +11,27 @@ import {
   BsPencil,
   BsGrid3X3Gap,
   BsTable,
+  BsGripVertical,
+  BsListOl,
 } from "react-icons/bs";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "reactstrap";
 import Select from "react-select";
 import { useAuth } from "../context/AuthContext";
@@ -243,6 +263,19 @@ const StampBrowsePage = () => {
   const [sortDir, setSortDir] = useState("desc");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [layout, setLayout] = useState("cards");
+  const [wishlistOrder, setWishlistOrder] = useState(null);
+  const [collectionOrder, setCollectionOrder] = useState(null);
+  const [memberWishlistOrder, setMemberWishlistOrder] = useState(null);
+  const [memberCollectionOrder, setMemberCollectionOrder] = useState(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [reorderItems, setReorderItems] = useState([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const cityOptions = useMemo(() => {
     const base = filterStates.length
@@ -317,9 +350,21 @@ const StampBrowsePage = () => {
       .then((r) => r.json())
       .then((data) => setGoals(data))
       .catch(() => {});
+    fetch("/api/stamps/wishlist/order", { credentials: "include" })
+      .then((r) => r.json())
+      .then((slugs) => { if (slugs.length) setWishlistOrder(slugs); })
+      .catch(() => {});
+    fetch("/api/stamps/collection/order", { credentials: "include" })
+      .then((r) => r.json())
+      .then((slugs) => { if (slugs.length) setCollectionOrder(slugs); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
+    setSortDir("desc");
+    setMemberWishlistOrder(null);
+    setMemberCollectionOrder(null);
+
     if (!selectedMember) {
       setMemberWishlist(new Set());
       setMemberCollection(new Set());
@@ -327,26 +372,21 @@ const StampBrowsePage = () => {
       return;
     }
     Promise.all([
-      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/wishlist`, {
-        credentials: "include",
-      }),
-      fetch(
-        `/api/stamps/user/${encodeURIComponent(selectedMember)}/collection`,
-        { credentials: "include" },
-      ),
-      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/goals`, {
-        credentials: "include",
-      }),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/wishlist`, { credentials: "include" }),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/collection`, { credentials: "include" }),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/goals`, { credentials: "include" }),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/wishlist/order`, { credentials: "include" }),
+      fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/collection/order`, { credentials: "include" }),
     ])
-      .then(async ([wRes, cRes, gRes]) => {
-        const [wSlugs, cSlugs, gData] = await Promise.all([
-          wRes.json(),
-          cRes.json(),
-          gRes.json(),
+      .then(async ([wRes, cRes, gRes, woRes, coRes]) => {
+        const [wSlugs, cSlugs, gData, woSlugs, coSlugs] = await Promise.all([
+          wRes.json(), cRes.json(), gRes.json(), woRes.json(), coRes.json(),
         ]);
         setMemberWishlist(new Set(wSlugs));
         setMemberCollection(new Set(cSlugs));
         setMemberGoals(gData);
+        if (woSlugs.length) setMemberWishlistOrder(woSlugs);
+        if (coSlugs.length) setMemberCollectionOrder(coSlugs);
       })
       .catch(() => {});
   }, [selectedMember]);
@@ -575,6 +615,17 @@ const StampBrowsePage = () => {
   const activeCollection = selectedMember ? memberCollection : collection;
   const activeGoals = selectedMember ? memberGoals : goals;
 
+  const activeOrder = useMemo(() => {
+    if (selectedMember) {
+      if (view === "wishlist") return memberWishlistOrder;
+      if (view === "collection") return memberCollectionOrder;
+      return null;
+    }
+    if (view === "wishlist") return wishlistOrder;
+    if (view === "collection") return collectionOrder;
+    return null;
+  }, [view, selectedMember, wishlistOrder, collectionOrder, memberWishlistOrder, memberCollectionOrder]);
+
   const displayed = useMemo(() => {
     let base =
       view === "wishlist"
@@ -602,6 +653,15 @@ const StampBrowsePage = () => {
     if (filterCities.length)
       base = base.filter((s) => filterCities.includes(s.city));
 
+    if (sortDir === "custom" && activeOrder) {
+      const orderMap = new Map(activeOrder.map((slug, i) => [slug, i]));
+      return [...base].sort((a, b) => {
+        const ai = orderMap.get(a.slug) ?? Infinity;
+        const bi = orderMap.get(b.slug) ?? Infinity;
+        return ai - bi;
+      });
+    }
+
     const TBA = new Date("9999-12-31");
     return [...base].sort((a, b) => {
       const da = a.issued ? new Date(a.issued) : TBA;
@@ -619,6 +679,7 @@ const StampBrowsePage = () => {
     sortDir,
     activeWishlist,
     activeCollection,
+    activeOrder,
   ]);
 
   const baseCount =
@@ -636,6 +697,68 @@ const StampBrowsePage = () => {
       ? `${cap(selectedMember)} hasn't added any stamps to their collection yet.`
       : "No stamps in your collection yet.",
   };
+
+  useEffect(() => {
+    if (sortDir === "custom" && !activeOrder) setSortDir("desc");
+  }, [sortDir, activeOrder]);
+
+  const cycleSortDir = () => {
+    if (sortDir === "desc") { setSortDir("asc"); return; }
+    if (sortDir === "asc") { setSortDir(activeOrder ? "custom" : "desc"); return; }
+    setSortDir("desc");
+  };
+
+  const enterReorderMode = useCallback(() => {
+    const slugSet = view === "wishlist" ? activeWishlist : activeCollection;
+    const all = STAMPS.filter((s) => slugSet.has(s.slug));
+    if (activeOrder) {
+      const orderMap = new Map(activeOrder.map((slug, i) => [slug, i]));
+      all.sort((a, b) => (orderMap.get(a.slug) ?? Infinity) - (orderMap.get(b.slug) ?? Infinity));
+    } else {
+      const TBA = new Date("9999-12-31");
+      all.sort((a, b) => {
+        const da = a.issued ? new Date(a.issued) : TBA;
+        const db = b.issued ? new Date(b.issued) : TBA;
+        return db - da;
+      });
+    }
+    setReorderItems(all);
+    setReorderMode(true);
+  }, [view, activeWishlist, activeCollection, activeOrder]);
+
+  const handleDragEnd = useCallback(({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    setReorderItems((prev) => {
+      const oldIdx = prev.findIndex((s) => s.slug === active.id);
+      const newIdx = prev.findIndex((s) => s.slug === over.id);
+      return arrayMove(prev, oldIdx, newIdx);
+    });
+  }, []);
+
+  const saveReorderMode = async () => {
+    if (savingOrder) return;
+    setSavingOrder(true);
+    const slugs = reorderItems.map((s) => s.slug);
+    const endpoint =
+      view === "wishlist"
+        ? "/api/stamps/wishlist/order"
+        : "/api/stamps/collection/order";
+    try {
+      await fetch(endpoint, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slugs }),
+      });
+      if (view === "wishlist") setWishlistOrder(slugs);
+      else setCollectionOrder(slugs);
+      setSortDir("custom");
+    } catch {}
+    setSavingOrder(false);
+    setReorderMode(false);
+  };
+
+  const cancelReorderMode = () => setReorderMode(false);
 
   return (
     <div className="stamp-browse-container">
@@ -711,7 +834,7 @@ const StampBrowsePage = () => {
           ))}
         </div>
 
-        {view !== "goals" && (
+        {view !== "goals" && !reorderMode && (
           <div className="stamp-filters">
             <input
               className="stamp-search"
@@ -843,14 +966,46 @@ const StampBrowsePage = () => {
                 <BsTable />
               </button>
             </div>
-            <button
-              className="stamp-sort-btn"
-              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-              title={sortDir === "asc" ? "Oldest first" : "Newest first"}
-            >
-              {sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
-              {sortDir === "desc" ? "Newest first" : "Oldest first"}
-            </button>
+            {reorderMode ? (
+              <>
+                <button
+                  className="stamp-reorder-save"
+                  onClick={saveReorderMode}
+                  disabled={savingOrder}
+                >
+                  {savingOrder ? "Saving…" : "Save Order"}
+                </button>
+                <button className="stamp-reorder-cancel" onClick={cancelReorderMode}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                {(view === "wishlist" || view === "collection") && !selectedMember && (
+                  <button className="stamp-reorder-btn" onClick={enterReorderMode}>
+                    <BsGripVertical /> Reorder
+                  </button>
+                )}
+                <button
+                  className="stamp-sort-btn"
+                  onClick={cycleSortDir}
+                  title={
+                    sortDir === "custom"
+                      ? "Click to sort newest first"
+                      : sortDir === "desc"
+                        ? "Click to sort oldest first"
+                        : activeOrder
+                          ? "Click for My Order"
+                          : "Click to sort newest first"
+                  }
+                >
+                  {sortDir === "custom" ? <BsListOl /> : sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
+                  {sortDir === "custom"
+                    ? selectedMember ? `${cap(selectedMember)}'s Order` : "My Order"
+                    : sortDir === "desc" ? "Newest first" : "Oldest first"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -875,6 +1030,50 @@ const StampBrowsePage = () => {
           addingGoal={addingGoal}
           onEdit={editGoal}
         />
+      ) : reorderMode ? (
+        layout === "table" ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <div className="stamp-table-wrap">
+              <div className="stamp-table-inner">
+                <table className="stamp-table">
+                  <thead>
+                    <tr>
+                      <th className="stamp-th stamp-th--drag"></th>
+                      <th className="stamp-th stamp-th--thumb"></th>
+                      <th className="stamp-th">Name</th>
+                      <th className="stamp-th stamp-th--city">City</th>
+                      <th className="stamp-th stamp-th--date">Date</th>
+                      <th className="stamp-th stamp-th--denom">Denomination</th>
+                    </tr>
+                  </thead>
+                  <SortableContext
+                    items={reorderItems.map((s) => s.slug)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <tbody>
+                      {reorderItems.map((stamp) => (
+                        <SortableStampTableRow key={stamp.slug} stamp={stamp} />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </div>
+            </div>
+          </DndContext>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext
+              items={reorderItems.map((s) => s.slug)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="stamp-grid">
+                {reorderItems.map((stamp) => (
+                  <SortableStampCard key={stamp.slug} stamp={stamp} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )
       ) : displayed.length === 0 ? (
         <div className="stamp-empty">
           {hasFilters ? (
@@ -968,6 +1167,7 @@ const StampCard = ({
   onToggleWishlist,
   onToggleCollection,
   onClick,
+  hideActions = false,
 }) => {
   const base = stamp.images?.length
     ? stamp.images
@@ -1053,28 +1253,30 @@ const StampCard = ({
           </div>
         )}
       </div>
-      <div className="stamp-card-actions">
-        <button
-          className={`stamp-action-btn stamp-heart-btn ${wishlisted ? "wishlisted" : ""}`}
-          onClick={(e) => onToggleWishlist(e, stamp.slug)}
-          disabled={togglingWishlist}
-          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        >
-          {wishlisted ? <BsHeartFill /> : <BsHeart />}
-        </button>
-        <button
-          className={`stamp-action-btn stamp-check-btn ${collected ? "collected" : ""}`}
-          onClick={(e) => onToggleCollection(e, stamp.slug)}
-          disabled={togglingCollection}
-          aria-label={
-            collected ? "Remove from collection" : "Add to collection"
-          }
-          title={collected ? "Remove from collection" : "Add to collection"}
-        >
-          {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
-        </button>
-      </div>
+      {!hideActions && (
+        <div className="stamp-card-actions">
+          <button
+            className={`stamp-action-btn stamp-heart-btn ${wishlisted ? "wishlisted" : ""}`}
+            onClick={(e) => onToggleWishlist(e, stamp.slug)}
+            disabled={togglingWishlist}
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            {wishlisted ? <BsHeartFill /> : <BsHeart />}
+          </button>
+          <button
+            className={`stamp-action-btn stamp-check-btn ${collected ? "collected" : ""}`}
+            onClick={(e) => onToggleCollection(e, stamp.slug)}
+            disabled={togglingCollection}
+            aria-label={
+              collected ? "Remove from collection" : "Add to collection"
+            }
+            title={collected ? "Remove from collection" : "Add to collection"}
+          >
+            {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -1148,6 +1350,70 @@ const StampTableRow = ({
           </button>
         </div>
       </td>
+    </tr>
+  );
+};
+
+const SortableStampCard = ({ stamp }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: stamp.slug });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        position: "relative",
+      }}
+      className="sortable-card-wrap"
+    >
+      <div className="stamp-drag-handle" {...attributes} {...listeners}>
+        <BsGripVertical />
+      </div>
+      <StampCard
+        stamp={stamp}
+        wishlisted={false}
+        collected={false}
+        togglingWishlist={false}
+        togglingCollection={false}
+        onToggleWishlist={() => {}}
+        onToggleCollection={() => {}}
+        onClick={() => {}}
+        hideActions
+      />
+    </div>
+  );
+};
+
+const SortableStampTableRow = ({ stamp }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: stamp.slug });
+  return (
+    <tr
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }}
+      className="stamp-tr"
+    >
+      <td className="stamp-td stamp-td--drag" {...attributes} {...listeners}>
+        <BsGripVertical className="stamp-drag-icon" />
+      </td>
+      <td className="stamp-td stamp-td--thumb">
+        <img
+          src={stamp.images?.[0] ?? stamp.img}
+          alt={stamp.name}
+          className="stamp-table-img"
+          loading="lazy"
+        />
+      </td>
+      <td className="stamp-td stamp-td--name">{stamp.name}</td>
+      <td className="stamp-td stamp-td--city">{stamp.city ?? "—"}</td>
+      <td className="stamp-td stamp-td--date">{stamp.issued ?? "TBA"}</td>
+      <td className="stamp-td stamp-td--denom">{stamp.denomination ?? "—"}</td>
     </tr>
   );
 };
