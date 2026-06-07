@@ -967,7 +967,10 @@ const StampCard = ({
   onToggleCollection,
   onClick,
 }) => {
-  const images = stamp.images?.length ? stamp.images : [stamp.img];
+  const base = stamp.images?.length ? stamp.images : [stamp.img].filter(Boolean);
+  const images = stamp.sheet_img && !base.includes(stamp.sheet_img)
+    ? [...base, stamp.sheet_img]
+    : base;
   const [imgIdx, setImgIdx] = useState(0);
 
   const prevImg = (e) => {
