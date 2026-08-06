@@ -2,7 +2,7 @@
   width: 100%;
   min-height: 100vh;
   box-sizing: border-box;
-  padding: 48px;
+  padding: 28px 48px 48px;
   text-align: center;
   align-items: center;
   color: #286e84;
@@ -11,10 +11,20 @@
 
 .landing-page-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: right;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header-badge {
+  height: 40px;
+  width: auto;
+}
+
+.header-right {
+  display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .header-username {
@@ -22,12 +32,20 @@
   color: #495057;
 }
 
+.landing-logo {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
 .card-wrapper {
   display: flex;
   flex-wrap: wrap;
   text-align: center;
   justify-content: center;
-  margin-top: 48px;
+  margin-top: 24px;
 }
 
 @media (max-width: 700px) {

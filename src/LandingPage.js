@@ -50,12 +50,18 @@ const LandingPage = () => {
   return (
     <div className="landing-page-container">
       <div className="landing-page-header">
-        <span className="header-username">{cap(user?.username)}</span>
-        <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-          Log out
-        </Button>
+        <div className="header-right">
+          <span className="header-username">{cap(user?.username)}</span>
+          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
+            Log out
+          </Button>
+        </div>
       </div>
-      <h1>Hi Miles! I love you!</h1>
+      <img
+        src="/logo.svg"
+        alt="olivialovesmiles.com"
+        className="landing-logo"
+      />
       <div className="card-wrapper">
         {items.map((item) => (
           <MilesCard id={item.title} content={item} />
