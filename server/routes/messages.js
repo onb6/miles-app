@@ -1,10 +1,8 @@
 const express = require("express");
-const path = require("path");
-const crypto = require("crypto");
-const multer = require("multer");
 const { Resend } = require("resend");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
+const { upload, USE_S3, s3 } = require("../middleware/upload");
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const APP_URL = process.env.APP_URL || "";
@@ -52,48 +50,6 @@ async function notifyNewReply(reply, parentId, replierUserId) {
 
 const router = express.Router();
 
-const USE_S3 = !!(
-  process.env.BUCKET_ENDPOINT &&
-  process.env.BUCKET_NAME &&
-  process.env.BUCKET_ACCESS_KEY &&
-  process.env.BUCKET_SECRET_KEY
-);
-
-let s3, storage;
-if (USE_S3) {
-  const multerS3 = require("multer-s3");
-  const { S3Client } = require("@aws-sdk/client-s3");
-  const endpoint = process.env.BUCKET_ENDPOINT.startsWith("http")
-    ? process.env.BUCKET_ENDPOINT
-    : `https://${process.env.BUCKET_ENDPOINT}`;
-  s3 = new S3Client({
-    region: process.env.BUCKET_REGION,
-    endpoint,
-    credentials: {
-      accessKeyId: process.env.BUCKET_ACCESS_KEY,
-      secretAccessKey: process.env.BUCKET_SECRET_KEY,
-    },
-    forcePathStyle: true,
-  });
-  storage = multerS3({
-    s3,
-    bucket: process.env.BUCKET_NAME,
-    contentType: (_req, file, cb) => cb(null, file.mimetype),
-    key: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
-} else {
-  storage = multer.diskStorage({
-    destination: path.join(__dirname, "../uploads"),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  });
-}
-
 // Proxy S3 files through the server so the bucket doesn't need public access
 router.get("/uploads/:key", async (req, res) => {
   if (!USE_S3) return res.status(404).json({ error: "Not found" });
@@ -112,15 +68,6 @@ router.get("/uploads/:key", async (req, res) => {
     console.error(err);
     res.status(404).json({ error: "File not found" });
   }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    cb(null, allowed.includes(file.mimetype));
-  },
 });
 
 /**

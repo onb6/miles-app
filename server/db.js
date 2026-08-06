@@ -132,6 +132,11 @@ const initDb = async () => {
       PRIMARY KEY (user_id, list_type, slug)
     )
   `);
+
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT
+  `);
 };
 
 module.exports = { pool, initDb };

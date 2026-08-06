@@ -5,8 +5,7 @@ import "./MessageBoard.css";
 import { Button, Input } from "reactstrap";
 import MessageItem from "./MessageItem";
 import ThreadPanel from "./ThreadPanel";
-
-const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+import ProfileDropdown from "../components/ProfileDropdown";
 
 const POSTIT_COLORS = [
   "#fef08a", // yellow
@@ -18,7 +17,7 @@ const POSTIT_COLORS = [
 ];
 
 const MessageBoard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [addingMessage, setAddingMessage] = useState(false);
@@ -180,11 +179,6 @@ const MessageBoard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
   return (
     <div className="landing-page-container message-board-page">
       <div className="messsage-board-header">
@@ -192,12 +186,7 @@ const MessageBoard = () => {
           <img src="/favicon.svg" alt="Home" />
         </button>
         <h2>Message Board</h2>
-        <div className="header-user">
-          <span className="header-username">{cap(user?.username)}</span>
-          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-            Log out
-          </Button>
-        </div>
+        <ProfileDropdown />
       </div>
 
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}

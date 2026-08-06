@@ -29,9 +29,8 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button } from "reactstrap";
 import Select from "react-select";
-import { useAuth } from "../context/AuthContext";
+import ProfileDropdown from "../components/ProfileDropdown";
 import STAMPS from "../data/stamps.json";
 import { useSwipe } from "../hooks/useSwipe";
 import "./StampBrowsePage.css";
@@ -243,7 +242,6 @@ const SORT_SELECT_STYLES = {
 };
 
 const StampBrowsePage = () => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [wishlist, setWishlist] = useState(new Set());
@@ -557,10 +555,6 @@ const StampBrowsePage = () => {
     [collection, togglingCollection],
   );
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
 
   const handleSelectMember = (username) => {
     if (selectedMember === username) {
@@ -905,20 +899,11 @@ const StampBrowsePage = () => {
   return (
     <div className="stamp-browse-container">
       <div className="stamp-browse-header">
-        <Button
-          color="outline-secondary"
-          size="sm"
-          onClick={() => navigate("/")}
-        >
-          Home
-        </Button>
+        <button className="header-badge-btn" onClick={() => navigate("/")}>
+          <img src="/favicon.svg" alt="Home" />
+        </button>
         <h2>Stamp Collecting</h2>
-        <div className="header-user">
-          <span className="header-username">{cap(user?.username)}</span>
-          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-            Log out
-          </Button>
-        </div>
+        <ProfileDropdown />
       </div>
 
       <div className="stamp-browse-controls">

@@ -9,17 +9,16 @@ import {
 } from "react-icons/bs";
 import { Button } from "reactstrap";
 import { useAuth } from "../context/AuthContext";
+import ProfileDropdown from "../components/ProfileDropdown";
 import { useSwipe } from "../hooks/useSwipe";
 import STAMPS from "../data/stamps.json";
 import "./StampDetailPage.css";
-
-const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 const STAMP_MAP = Object.fromEntries(STAMPS.map((s) => [s.slug, s]));
 
 const StampDetailPage = () => {
   const { slug } = useParams();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const stamp = STAMP_MAP[slug];
 
@@ -97,11 +96,6 @@ const StampDetailPage = () => {
     } finally {
       setTogglingCollection(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
   };
 
   const images = stamp
@@ -199,20 +193,11 @@ const StampDetailPage = () => {
   return (
     <div className="stamp-detail-container">
       <div className="stamp-browse-header">
-        <Button
-          color="outline-secondary"
-          size="sm"
-          onClick={() => navigate("/")}
-        >
-          Home
-        </Button>
+        <button className="header-badge-btn" onClick={() => navigate("/")}>
+          <img src="/favicon.svg" alt="Home" />
+        </button>
         <h2>Stamp Collecting</h2>
-        <div className="header-user">
-          <span className="header-username">{cap(user?.username)}</span>
-          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-            Log out
-          </Button>
-        </div>
+        <ProfileDropdown />
       </div>
 
       <div className="stamp-detail-body">

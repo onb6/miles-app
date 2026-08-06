@@ -2,6 +2,7 @@ const express = require("express");
 const crypto = require("crypto");
 const { pool } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
+const { upload, USE_S3, s3 } = require("../middleware/upload");
 
 const router = express.Router();
 
@@ -205,6 +206,72 @@ router.post("/logout", async (req, res) => {
  */
 router.get("/me", requireAuth, (req, res) => {
   res.json(req.user);
+});
+
+// Proxy S3 avatar files
+router.get("/uploads/:key", async (req, res) => {
+  if (!USE_S3) return res.status(404).json({ error: "Not found" });
+  try {
+    const { GetObjectCommand } = require("@aws-sdk/client-s3");
+    const response = await s3.send(
+      new GetObjectCommand({ Bucket: process.env.BUCKET_NAME, Key: req.params.key })
+    );
+    res.set("Content-Type", response.ContentType);
+    res.set("Cache-Control", "public, max-age=31536000, immutable");
+    response.Body.pipe(res);
+  } catch (err) {
+    console.error(err);
+    res.status(404).json({ error: "File not found" });
+  }
+});
+
+router.patch("/profile", requireAuth, (req, res, next) => {
+  upload.single("avatar")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  const { username, email } = req.body;
+  const userId = req.user.user_id;
+
+  const updates = [];
+  const values = [];
+  let idx = 1;
+
+  if (username && username.trim()) {
+    updates.push(`username = $${idx++}`);
+    values.push(username.trim());
+  }
+  if (email && email.trim()) {
+    updates.push(`email = $${idx++}`);
+    values.push(email.trim().toLowerCase());
+  }
+  if (req.file) {
+    const avatarUrl = USE_S3
+      ? `/api/auth/uploads/${req.file.key}`
+      : `/uploads/${req.file.filename}`;
+    updates.push(`avatar_url = $${idx++}`);
+    values.push(avatarUrl);
+  }
+
+  if (updates.length === 0) return res.json(req.user);
+
+  values.push(userId);
+  try {
+    const { rows } = await pool.query(
+      `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING id, username, email, avatar_url`,
+      values
+    );
+    const u = rows[0];
+    res.json({ user_id: u.id, username: u.username, email: u.email, avatar_url: u.avatar_url });
+  } catch (err) {
+    if (err.constraint === "users_username_key")
+      return res.status(409).json({ error: "Username already taken" });
+    if (err.constraint === "users_email_key")
+      return res.status(409).json({ error: "Email already registered" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
 });
 
 module.exports = router;

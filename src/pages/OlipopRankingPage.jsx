@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BsGripVertical, BsX, BsPlus } from "react-icons/bs";
-import { useAuth } from "../context/AuthContext";
+import ProfileDropdown from "../components/ProfileDropdown";
 import { Button, Input } from "reactstrap";
 import {
   DndContext,
@@ -167,7 +167,6 @@ const SortableItem = ({
 };
 
 const OlipopRankingPage = () => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [myRanking, setMyRanking] = useState([]);
   const [allRankings, setAllRankings] = useState([]);
@@ -260,10 +259,6 @@ const OlipopRankingPage = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
 
   const query = search.toLowerCase();
   const filteredFlavors = FLAVORS.filter(
@@ -273,20 +268,11 @@ const OlipopRankingPage = () => {
   return (
     <div className="landing-page-container">
       <div className="messsage-board-header">
-        <Button
-          color="outline-secondary"
-          size="sm"
-          onClick={() => navigate("/")}
-        >
-          Home
-        </Button>
+        <button className="header-badge-btn" onClick={() => navigate("/")}>
+          <img src="/favicon.svg" alt="Home" />
+        </button>
         <h2>Olipop Rankings</h2>
-        <div className="header-user">
-          <span className="header-username">{cap(user?.username)}</span>
-          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-            Log out
-          </Button>
-        </div>
+        <ProfileDropdown />
       </div>
 
       {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}

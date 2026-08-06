@@ -6,7 +6,7 @@ const requireAuth = async (req, res, next) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT s.user_id, u.username, u.email
+      `SELECT s.user_id, u.username, u.email, u.avatar_url
        FROM sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.token = $1 AND s.expires_at > NOW()`,

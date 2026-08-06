@@ -8,6 +8,7 @@ import AuthPage from "./pages/AuthPage";
 import OlipopRankingPage from "./pages/OlipopRankingPage";
 import StampBrowsePage from "./pages/StampBrowsePage";
 import StampDetailPage from "./pages/StampDetailPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -58,6 +59,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StampDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

@@ -3,20 +3,9 @@ import MilesCard from "./components/MilesCard";
 import OlipopImg from "./assets/olipop.png";
 import StampsImg from "./assets/stamps.jpg";
 import MessageImg from "./assets/messages.jpg";
-import { Button } from "reactstrap";
-import { useAuth } from "./context/AuthContext";
-import { useNavigate } from "react-router-dom";
-
-const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+import ProfileDropdown from "./components/ProfileDropdown";
 
 const LandingPage = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
   const items = [
     {
       title: "Message Board",
@@ -51,10 +40,7 @@ const LandingPage = () => {
     <div className="landing-page-container">
       <div className="landing-page-header">
         <div className="header-right">
-          <span className="header-username">{cap(user?.username)}</span>
-          <Button color="outline-secondary" size="sm" onClick={handleLogout}>
-            Log out
-          </Button>
+          <ProfileDropdown />
         </div>
       </div>
       <img
