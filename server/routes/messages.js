@@ -22,7 +22,7 @@ async function notifyNewMessage(message, posterUserId) {
       from: FROM,
       to: rows.map((r) => r.email),
       subject: `New message from ${message.author}`,
-      html: `<p><strong>${message.author}</strong> posted on the message board:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${message.content}</blockquote><p><a href="${APP_URL}">View it here</a></p>`,
+      html: `<p><strong>${message.author}</strong> posted on the message board:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${message.content}</blockquote><p><a href="${APP_URL}/board">View it here</a></p>`,
     });
   } catch (err) {
     console.error("Email notification failed:", err);
@@ -43,7 +43,7 @@ async function notifyNewReply(reply, parentId, replierUserId) {
       from: FROM,
       to: rows[0].email,
       subject: `${reply.author} replied to your message`,
-      html: `<p><strong>${reply.author}</strong> replied to your message:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${reply.content}</blockquote><p><a href="${APP_URL}">View it here</a></p>`,
+      html: `<p><strong>${reply.author}</strong> replied to your message:</p><blockquote style="border-left:3px solid #ccc;padding-left:1em;color:#555">${reply.content}</blockquote><p><a href="${APP_URL}/board">View it here</a></p>`,
     });
   } catch (err) {
     console.error("Email notification failed:", err);
