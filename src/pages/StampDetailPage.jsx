@@ -8,7 +8,6 @@ import {
   BsCheckCircleFill,
 } from "react-icons/bs";
 import { Button } from "reactstrap";
-import { useAuth } from "../context/AuthContext";
 import ProfileDropdown from "../components/ProfileDropdown";
 import { useSwipe } from "../hooks/useSwipe";
 import STAMPS from "../data/stamps.json";
@@ -18,7 +17,6 @@ const STAMP_MAP = Object.fromEntries(STAMPS.map((s) => [s.slug, s]));
 
 const StampDetailPage = () => {
   const { slug } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const stamp = STAMP_MAP[slug];
 
