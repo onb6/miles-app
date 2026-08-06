@@ -62,7 +62,10 @@ const StampDetailPage = () => {
     const next = !wishlisted;
     setWishlisted(next);
     setWishlistAddedAt(next ? new Date().toISOString() : null);
-    if (next) { setCollected(false); setCollectionAddedAt(null); }
+    if (next) {
+      setCollected(false);
+      setCollectionAddedAt(null);
+    }
     try {
       await fetch(`/api/stamps/wishlist/${slug}`, {
         method: next ? "POST" : "DELETE",
@@ -83,7 +86,10 @@ const StampDetailPage = () => {
     const next = !collected;
     setCollected(next);
     setCollectionAddedAt(next ? new Date().toISOString() : null);
-    if (next) { setWishlisted(false); setWishlistAddedAt(null); }
+    if (next) {
+      setWishlisted(false);
+      setWishlistAddedAt(null);
+    }
     try {
       await fetch(`/api/stamps/collection/${slug}`, {
         method: next ? "POST" : "DELETE",
@@ -105,7 +111,12 @@ const StampDetailPage = () => {
     : [];
 
   const allImages = stamp
-    ? [...images, ...(stamp.sheet_img && !images.includes(stamp.sheet_img) ? [stamp.sheet_img] : [])]
+    ? [
+        ...images,
+        ...(stamp.sheet_img && !images.includes(stamp.sheet_img)
+          ? [stamp.sheet_img]
+          : []),
+      ]
     : [];
 
   const prevImg = useCallback(
@@ -116,7 +127,10 @@ const StampDetailPage = () => {
     () => setActiveImg((i) => (i + 1) % images.length),
     [images.length],
   );
-  const openModal = useCallback((idx) => { setModalIdx(idx); setModalOpen(true); }, []);
+  const openModal = useCallback((idx) => {
+    setModalIdx(idx);
+    setModalOpen(true);
+  }, []);
   const closeModal = useCallback(() => setModalOpen(false), []);
   const modalPrev = useCallback(
     () => setModalIdx((i) => (i - 1 + allImages.length) % allImages.length),
@@ -259,7 +273,9 @@ const StampDetailPage = () => {
                 src={stamp.sheet_img}
                 alt={`${stamp.name} full sheet`}
                 className="stamp-sheet-img stamp-detail-img--zoomable"
-                onDoubleClick={() => openModal(allImages.indexOf(stamp.sheet_img))}
+                onDoubleClick={() =>
+                  openModal(allImages.indexOf(stamp.sheet_img))
+                }
                 title="Double-click to zoom"
               />
             </div>
@@ -276,14 +292,21 @@ const StampDetailPage = () => {
                   className={`stamp-detail-action-btn stamp-detail-heart ${wishlisted ? "wishlisted" : ""}`}
                   onClick={toggleWishlist}
                   disabled={togglingWishlist}
-                  aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={
+                    wishlisted ? "Remove from wishlist" : "Add to wishlist"
+                  }
                 >
                   {wishlisted ? <BsHeartFill /> : <BsHeart />}
                   <span>{wishlisted ? "In Wishlist" : "Add to Wishlist"}</span>
                 </button>
                 {wishlistAddedAt && (
                   <span className="stamp-detail-added-date">
-                    Added {new Date(wishlistAddedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    Added{" "}
+                    {new Date(wishlistAddedAt).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </span>
                 )}
               </div>
@@ -292,14 +315,23 @@ const StampDetailPage = () => {
                   className={`stamp-detail-action-btn stamp-detail-check ${collected ? "collected" : ""}`}
                   onClick={toggleCollection}
                   disabled={togglingCollection}
-                  aria-label={collected ? "Remove from collection" : "Add to collection"}
+                  aria-label={
+                    collected ? "Remove from collection" : "Add to collection"
+                  }
                 >
                   {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
-                  <span>{collected ? "In Collection" : "Add to Collection"}</span>
+                  <span>
+                    {collected ? "In Collection" : "Add to Collection"}
+                  </span>
                 </button>
                 {collectionAddedAt && (
                   <span className="stamp-detail-added-date">
-                    Added {new Date(collectionAddedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    Added{" "}
+                    {new Date(collectionAddedAt).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </span>
                 )}
               </div>
@@ -343,7 +375,9 @@ const StampDetailPage = () => {
                 <span className="stamp-meta-label">Designer</span>
                 <span className="stamp-meta-value">
                   {primaryDesigners.map((d) => (
-                    <span key={d.name} style={{ display: "block" }}>{d.name}</span>
+                    <span key={d.name} style={{ display: "block" }}>
+                      {d.name}
+                    </span>
                   ))}
                 </span>
               </div>
@@ -353,7 +387,9 @@ const StampDetailPage = () => {
                 <span className="stamp-meta-label">{role}</span>
                 <span className="stamp-meta-value">
                   {names.map((name) => (
-                    <span key={name} style={{ display: "block" }}>{name}</span>
+                    <span key={name} style={{ display: "block" }}>
+                      {name}
+                    </span>
                   ))}
                 </span>
               </div>
@@ -382,30 +418,51 @@ const StampDetailPage = () => {
 
       {modalOpen && (
         <div className="stamp-lightbox-overlay" onClick={closeModal}>
-          <button className="stamp-lightbox-close" onClick={closeModal} aria-label="Close">×</button>
+          <button
+            className="stamp-lightbox-close"
+            onClick={closeModal}
+            aria-label="Close"
+          >
+            ×
+          </button>
           {allImages.length > 1 && (
             <button
               className="stamp-lightbox-arrow stamp-lightbox-arrow--prev"
-              onClick={(e) => { e.stopPropagation(); modalPrev(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                modalPrev();
+              }}
               aria-label="Previous image"
             >
               &#8249;
             </button>
           )}
-          <div className="stamp-lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <img src={allImages[modalIdx]} alt={stamp.name} className="stamp-lightbox-img" />
+          <div
+            className="stamp-lightbox-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={allImages[modalIdx]}
+              alt={stamp.name}
+              className="stamp-lightbox-img"
+            />
           </div>
           {allImages.length > 1 && (
             <button
               className="stamp-lightbox-arrow stamp-lightbox-arrow--next"
-              onClick={(e) => { e.stopPropagation(); modalNext(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                modalNext();
+              }}
               aria-label="Next image"
             >
               &#8250;
             </button>
           )}
           {allImages.length > 1 && (
-            <span className="stamp-lightbox-counter">{modalIdx + 1} / {allImages.length}</span>
+            <span className="stamp-lightbox-counter">
+              {modalIdx + 1} / {allImages.length}
+            </span>
           )}
         </div>
       )}
