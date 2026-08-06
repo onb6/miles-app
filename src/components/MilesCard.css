@@ -1,8 +1,8 @@
 .miles-card {
   display: flex;
   flex-direction: column;
-  margin-right: 12px;
-  margin-bottom: 12px;
+  margin-right: 24px;
+  margin-bottom: 24px;
   width: 21rem;
   height: 28rem;
 }
