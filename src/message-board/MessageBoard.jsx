@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./MessageBoard.css";
@@ -7,6 +7,15 @@ import MessageItem from "./MessageItem";
 import ThreadPanel from "./ThreadPanel";
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+const POSTIT_COLORS = [
+  "#fef08a", // yellow
+  "#fbcfe8", // pink
+  "#bae6fd", // sky blue
+  "#bbf7d0", // mint
+  "#fed7aa", // peach
+  "#ddd6fe", // lavender
+];
 
 const MessageBoard = () => {
   const { user, logout } = useAuth();
@@ -19,14 +28,9 @@ const MessageBoard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openThread, setOpenThread] = useState(null);
-  const [boardLastVisit, setBoardLastVisit] = useState(null);
   const [readTimestamps, setReadTimestamps] = useState({});
-
-  const isNewMessage = (msg) => {
-    if (!boardLastVisit) return false;
-    if (msg.user_id === user?.user_id) return false;
-    return new Date(msg.created_at) > new Date(boardLastVisit);
-  };
+  const [newMessageIds, setNewMessageIds] = useState(new Set());
+  const didFetch = useRef(false);
 
   const handleReplyPosted = (messageId) => {
     const now = new Date().toISOString();
@@ -48,9 +52,15 @@ const MessageBoard = () => {
     }).catch(() => {});
   };
 
-  const openThread_ = (message) => {
+  const openThread_ = (message, messageIndex) => {
     const prevReadAt = readTimestamps[message.id] || null;
-    setOpenThread({ message, unreadSince: prevReadAt });
+    const rootColor = POSTIT_COLORS[(messageIndex + 1) % 6];
+    setOpenThread({ message, unreadSince: prevReadAt, rootColor });
+    setNewMessageIds((prev) => {
+      const next = new Set(prev);
+      next.delete(message.id);
+      return next;
+    });
     setReadTimestamps((prev) => ({
       ...prev,
       [message.id]: new Date().toISOString(),
@@ -68,6 +78,8 @@ const MessageBoard = () => {
   };
 
   useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
     Promise.all([
       fetch("/api/messages", { credentials: "include" }).then((r) => {
         if (!r.ok) throw new Error("Failed to load messages");
@@ -79,12 +91,25 @@ const MessageBoard = () => {
     ])
       .then(([msgs, readState]) => {
         setMessages(msgs);
-        setBoardLastVisit(readState.prev_visited_at || null);
         setReadTimestamps(readState.thread_reads || {});
+        if (readState.prev_visited_at) {
+          const lastVisit = new Date(readState.prev_visited_at);
+          setNewMessageIds(
+            new Set(
+              msgs
+                .filter(
+                  (m) =>
+                    m.user_id !== user?.user_id &&
+                    new Date(m.created_at) > lastVisit,
+                )
+                .map((m) => m.id),
+            ),
+          );
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -161,15 +186,11 @@ const MessageBoard = () => {
   };
 
   return (
-    <div className="landing-page-container">
+    <div className="landing-page-container message-board-page">
       <div className="messsage-board-header">
-        <Button
-          color="outline-secondary"
-          size="sm"
-          onClick={() => navigate("/")}
-        >
-          Home
-        </Button>
+        <button className="header-badge-btn" onClick={() => navigate("/")}>
+          <img src="/favicon.svg" alt="Home" />
+        </button>
         <h2>Message Board</h2>
         <div className="header-user">
           <span className="header-username">{cap(user?.username)}</span>
@@ -185,7 +206,7 @@ const MessageBoard = () => {
         className={`message-board-content${openThread ? " thread-open" : ""}`}
       >
         {loading ? (
-          <p>Loading messages...</p>
+          <p style={{ color: "white" }}>Loading messages...</p>
         ) : (
           <div className="masonry-grid">
             <div className="message-card compose-card">
@@ -250,7 +271,7 @@ const MessageBoard = () => {
                 )}
               </div>
             </div>
-            {messages.map((message) => (
+            {messages.map((message, i) => (
               <MessageItem
                 key={message.id}
                 message={message}
@@ -260,9 +281,9 @@ const MessageBoard = () => {
                 onDelete={
                   message.user_id === user?.user_id ? handleDeleteMessage : null
                 }
-                onReply={openThread_}
+                onReply={(msg) => openThread_(msg, i)}
                 hasUnread={hasUnread(message)}
-                isNew={isNewMessage(message)}
+                isNew={newMessageIds.has(message.id)}
                 isActive={openThread?.message?.id === message.id}
               />
             ))}
@@ -274,6 +295,7 @@ const MessageBoard = () => {
         <ThreadPanel
           message={openThread.message}
           unreadSince={openThread.unreadSince}
+          rootColor={openThread.rootColor}
           currentUser={user}
           onClose={() => setOpenThread(null)}
           onReplyPosted={handleReplyPosted}

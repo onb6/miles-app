@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BsThreeDots, BsChat } from "react-icons/bs";
 import {
   Card,
@@ -7,10 +7,6 @@ import {
   CardSubtitle,
   Button,
   Input,
-  Dropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
 } from "reactstrap";
 import "./MessageBoard.css";
 
@@ -39,10 +35,23 @@ const MessageItem = ({
   hasUnread,
   isNew,
   isActive,
+  isUnreadReply,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [menuOpen]);
 
   const handleSave = async () => {
     if (!editText.trim() || editText === message.content) {
@@ -60,9 +69,17 @@ const MessageItem = ({
 
   const canAct = onEdit || onDelete;
 
+  const handleCardClick = (e) => {
+    if (!onReply || editing) return;
+    if (e.target.closest("a, button, input")) return;
+    onReply(message);
+  };
+
   return (
     <Card
       className={`message-card${isNew || hasUnread ? " message-card-new" : ""}${isActive ? " message-card-active" : ""}`}
+      onClick={handleCardClick}
+      style={onReply && !editing ? { cursor: "pointer" } : undefined}
     >
       {message.image_url && (
         <img
@@ -73,7 +90,6 @@ const MessageItem = ({
       )}
       <CardBody>
         <div className="message-card-header">
-          {isNew && <span className="new-badge">NEW</span>}
           <CardSubtitle
             className="text-muted"
             style={{ fontSize: "0.8rem", margin: 0 }}
@@ -81,32 +97,50 @@ const MessageItem = ({
             {cap(message.author)} &middot;{" "}
             {new Date(message.created_at).toLocaleString()}
           </CardSubtitle>
-          {canAct && !editing && (
-            <Dropdown
-              isOpen={menuOpen}
-              toggle={() => setMenuOpen((o) => !o)}
-              direction="down"
-            >
-              <DropdownToggle tag="button" className="ellipsis-btn">
-                <BsThreeDots />
-              </DropdownToggle>
-              <DropdownMenu end>
-                {onEdit && (
-                  <DropdownItem onClick={() => setEditing(true)}>
-                    Edit
-                  </DropdownItem>
+          <div className="message-card-header-right">
+            {isUnreadReply && <span className="new-badge">new</span>}
+            {canAct && !editing && (
+              <div className="message-menu-wrap" ref={menuRef}>
+                <button
+                  className="ellipsis-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen((o) => !o);
+                  }}
+                >
+                  <BsThreeDots />
+                </button>
+                {menuOpen && (
+                  <div className="message-menu">
+                    {onEdit && (
+                      <button
+                        className="message-menu-item"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditing(true);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        className="message-menu-item message-menu-item--danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(message.id);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 )}
-                {onDelete && (
-                  <DropdownItem
-                    className="text-danger"
-                    onClick={() => onDelete(message.id)}
-                  >
-                    Delete
-                  </DropdownItem>
-                )}
-              </DropdownMenu>
-            </Dropdown>
-          )}
+              </div>
+            )}
+          </div>
         </div>
         {editing ? (
           <div className="edit-section">
@@ -134,22 +168,25 @@ const MessageItem = ({
         ) : (
           <CardText>{linkify(message.content)}</CardText>
         )}
-        {onReply && (
-          <button
-            className={`reply-btn${hasUnread ? " reply-btn-unread" : ""}`}
-            onClick={() => onReply(message)}
-          >
-            <BsChat size={13} />
-            {hasUnread && <span className="reply-unread-dot" />}
-            <span>
-              {!message.reply_count || message.reply_count === 0
-                ? "Reply"
-                : message.reply_count === 1
-                  ? `${message.reply_count} reply`
-                  : `${message.reply_count} replies`}
-            </span>
-          </button>
-        )}
+        <div className="message-card-footer">
+          {onReply && (
+            <button
+              className={`reply-btn${hasUnread ? " reply-btn-unread" : ""}`}
+              onClick={() => onReply(message)}
+            >
+              <BsChat size={13} />
+              {hasUnread && <span className="reply-unread-dot" />}
+              <span>
+                {!message.reply_count || message.reply_count === 0
+                  ? "Reply"
+                  : message.reply_count === 1
+                    ? `${message.reply_count} reply`
+                    : `${message.reply_count} replies`}
+              </span>
+            </button>
+          )}
+          {isNew && <span className="new-badge">new</span>}
+        </div>
       </CardBody>
     </Card>
   );

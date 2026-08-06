@@ -9,6 +9,7 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 const ThreadPanel = ({
   message,
   unreadSince,
+  rootColor,
   currentUser,
   onClose,
   onReplyPosted,
@@ -116,7 +117,7 @@ const ThreadPanel = ({
         </button>
       </div>
 
-      <div className="thread-root">
+      <div className="thread-root" style={rootColor ? { backgroundColor: rootColor } : undefined}>
         {message.image_url && (
           <img src={message.image_url} alt="" className="thread-root-img" />
         )}
@@ -136,7 +137,6 @@ const ThreadPanel = ({
         ) : (
           replies.map((reply) => (
             <div key={reply.id} className="reply-wrapper">
-              {isUnread(reply) && <span className="thread-reply-unread-dot" />}
               <MessageItem
                 message={reply}
                 onEdit={
@@ -149,6 +149,7 @@ const ThreadPanel = ({
                     ? handleDeleteReply
                     : null
                 }
+                isUnreadReply={isUnread(reply)}
               />
             </div>
           ))
