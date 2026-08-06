@@ -187,6 +187,15 @@ const StampDetailPage = () => {
       /art director|stamp designer/i.test(d.role),
     ) ?? [];
 
+  const otherDesignerGroups = Object.entries(
+    (stamp.designers ?? [])
+      .filter((d) => !/art director|stamp designer/i.test(d.role))
+      .reduce((acc, d) => {
+        (acc[d.role] = acc[d.role] ?? []).push(d.name);
+        return acc;
+      }, {}),
+  );
+
   return (
     <div className="stamp-detail-container">
       <div className="stamp-browse-header">
@@ -348,18 +357,22 @@ const StampDetailPage = () => {
               <div className="stamp-meta-item">
                 <span className="stamp-meta-label">Designer</span>
                 <span className="stamp-meta-value">
-                  {primaryDesigners.map((d) => d.name).join(", ")}
+                  {primaryDesigners.map((d) => (
+                    <span key={d.name} style={{ display: "block" }}>{d.name}</span>
+                  ))}
                 </span>
               </div>
             )}
-            {stamp.designers
-              ?.filter((d) => !/art director|stamp designer/i.test(d.role))
-              .map((d) => (
-                <div key={d.name + d.role} className="stamp-meta-item">
-                  <span className="stamp-meta-label">{d.role}</span>
-                  <span className="stamp-meta-value">{d.name}</span>
-                </div>
-              ))}
+            {otherDesignerGroups.map(([role, names]) => (
+              <div key={role} className="stamp-meta-item">
+                <span className="stamp-meta-label">{role}</span>
+                <span className="stamp-meta-value">
+                  {names.map((name) => (
+                    <span key={name} style={{ display: "block" }}>{name}</span>
+                  ))}
+                </span>
+              </div>
+            ))}
           </div>
 
           {stamp.description && (
