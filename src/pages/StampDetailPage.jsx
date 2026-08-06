@@ -24,7 +24,9 @@ const StampDetailPage = () => {
   const stamp = STAMP_MAP[slug];
 
   const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistAddedAt, setWishlistAddedAt] = useState(null);
   const [collected, setCollected] = useState(false);
+  const [collectionAddedAt, setCollectionAddedAt] = useState(null);
   const [togglingWishlist, setTogglingWishlist] = useState(false);
   const [togglingCollection, setTogglingCollection] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -36,11 +38,19 @@ const StampDetailPage = () => {
   useEffect(() => {
     fetch("/api/stamps/wishlist", { credentials: "include" })
       .then((r) => r.json())
-      .then((slugs) => setWishlisted(slugs.includes(slug)))
+      .then((items) => {
+        const match = items.find((i) => i.slug === slug);
+        setWishlisted(!!match);
+        setWishlistAddedAt(match?.added_at ?? null);
+      })
       .catch(() => {});
     fetch("/api/stamps/collection", { credentials: "include" })
       .then((r) => r.json())
-      .then((slugs) => setCollected(slugs.includes(slug)))
+      .then((items) => {
+        const match = items.find((i) => i.slug === slug);
+        setCollected(!!match);
+        setCollectionAddedAt(match?.added_at ?? null);
+      })
       .catch(() => {});
     setActiveImg(0);
   }, [slug]);
@@ -50,7 +60,8 @@ const StampDetailPage = () => {
     setTogglingWishlist(true);
     const next = !wishlisted;
     setWishlisted(next);
-    if (next) setCollected(false); // adding to wishlist evicts from collection
+    setWishlistAddedAt(next ? new Date().toISOString() : null);
+    if (next) { setCollected(false); setCollectionAddedAt(null); }
     try {
       await fetch(`/api/stamps/wishlist/${slug}`, {
         method: next ? "POST" : "DELETE",
@@ -58,6 +69,7 @@ const StampDetailPage = () => {
       });
     } catch {
       setWishlisted(!next);
+      setWishlistAddedAt(next ? null : new Date().toISOString());
       if (next) setCollected(true);
     } finally {
       setTogglingWishlist(false);
@@ -69,7 +81,8 @@ const StampDetailPage = () => {
     setTogglingCollection(true);
     const next = !collected;
     setCollected(next);
-    if (next) setWishlisted(false); // adding to collection evicts from wishlist
+    setCollectionAddedAt(next ? new Date().toISOString() : null);
+    if (next) { setWishlisted(false); setWishlistAddedAt(null); }
     try {
       await fetch(`/api/stamps/collection/${slug}`, {
         method: next ? "POST" : "DELETE",
@@ -77,6 +90,7 @@ const StampDetailPage = () => {
       });
     } catch {
       setCollected(!next);
+      setCollectionAddedAt(next ? null : new Date().toISOString());
       if (next) setWishlisted(true);
     } finally {
       setTogglingCollection(false);
@@ -228,28 +242,38 @@ const StampDetailPage = () => {
           <div className="stamp-detail-name-row">
             <h1 className="stamp-detail-name">{stamp.name}</h1>
             <div className="stamp-detail-action-btns">
-              <button
-                className={`stamp-detail-action-btn stamp-detail-heart ${wishlisted ? "wishlisted" : ""}`}
-                onClick={toggleWishlist}
-                disabled={togglingWishlist}
-                aria-label={
-                  wishlisted ? "Remove from wishlist" : "Add to wishlist"
-                }
-              >
-                {wishlisted ? <BsHeartFill /> : <BsHeart />}
-                <span>{wishlisted ? "In Wishlist" : "Add to Wishlist"}</span>
-              </button>
-              <button
-                className={`stamp-detail-action-btn stamp-detail-check ${collected ? "collected" : ""}`}
-                onClick={toggleCollection}
-                disabled={togglingCollection}
-                aria-label={
-                  collected ? "Remove from collection" : "Add to collection"
-                }
-              >
-                {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
-                <span>{collected ? "In Collection" : "Add to Collection"}</span>
-              </button>
+              <div className="stamp-detail-action-wrap">
+                <button
+                  className={`stamp-detail-action-btn stamp-detail-heart ${wishlisted ? "wishlisted" : ""}`}
+                  onClick={toggleWishlist}
+                  disabled={togglingWishlist}
+                  aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  {wishlisted ? <BsHeartFill /> : <BsHeart />}
+                  <span>{wishlisted ? "In Wishlist" : "Add to Wishlist"}</span>
+                </button>
+                {wishlistAddedAt && (
+                  <span className="stamp-detail-added-date">
+                    Added {new Date(wishlistAddedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </span>
+                )}
+              </div>
+              <div className="stamp-detail-action-wrap">
+                <button
+                  className={`stamp-detail-action-btn stamp-detail-check ${collected ? "collected" : ""}`}
+                  onClick={toggleCollection}
+                  disabled={togglingCollection}
+                  aria-label={collected ? "Remove from collection" : "Add to collection"}
+                >
+                  {collected ? <BsCheckCircleFill /> : <BsCheckCircle />}
+                  <span>{collected ? "In Collection" : "Add to Collection"}</span>
+                </button>
+                {collectionAddedAt && (
+                  <span className="stamp-detail-added-date">
+                    Added {new Date(collectionAddedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

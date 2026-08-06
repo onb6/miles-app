@@ -188,6 +188,18 @@
   flex-shrink: 0;
 }
 
+.stamp-detail-action-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stamp-detail-added-date {
+  font-size: 0.72rem;
+  color: #adb5bd;
+  padding-left: 2px;
+}
+
 .stamp-detail-action-btn {
   display: flex;
   gap: 7px;
