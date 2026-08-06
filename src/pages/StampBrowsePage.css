@@ -288,30 +288,6 @@
   justify-content: space-between;
 }
 
-.stamp-sort-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: 1px solid rgba(40, 110, 132, 0.22);
-  border-radius: 8px;
-  padding: 0 10px;
-  height: 32px;
-  font-size: 0.78rem;
-  color: #6c757d;
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    background 0.15s;
-}
-
-.stamp-sort-btn:hover {
-  color: #286e84;
-  border-color: rgba(40, 110, 132, 0.4);
-  background: rgba(40, 110, 132, 0.05);
-}
-
 /* Grid */
 .stamp-grid {
   display: grid;

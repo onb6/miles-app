@@ -6,13 +6,10 @@ import {
   BsCheckCircle,
   BsCheckCircleFill,
   BsX,
-  BsSortDown,
-  BsSortUp,
   BsPencil,
   BsGrid3X3Gap,
   BsTable,
   BsGripVertical,
-  BsListOl,
 } from "react-icons/bs";
 import {
   DndContext,
@@ -231,19 +228,37 @@ const SELECT_STYLES = {
   }),
 };
 
+const SORT_SELECT_STYLES = {
+  ...SELECT_STYLES,
+  control: (base, state) => ({
+    ...SELECT_STYLES.control(base, state),
+    minHeight: 32,
+    minWidth: 170,
+  }),
+  valueContainer: (base) => ({
+    ...SELECT_STYLES.valueContainer(base),
+    flexWrap: "nowrap",
+    padding: "0 8px",
+  }),
+};
+
 const StampBrowsePage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [wishlist, setWishlist] = useState(new Set());
+  const [wishlistDates, setWishlistDates] = useState(new Map());
   const [collection, setCollection] = useState(new Set());
+  const [collectionDates, setCollectionDates] = useState(new Map());
   const [view, setView] = useState("all");
   const [togglingWishlist, setTogglingWishlist] = useState(null);
   const [togglingCollection, setTogglingCollection] = useState(null);
   const [members, setMembers] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [memberWishlist, setMemberWishlist] = useState(new Set());
+  const [memberWishlistDates, setMemberWishlistDates] = useState(new Map());
   const [memberCollection, setMemberCollection] = useState(new Set());
+  const [memberCollectionDates, setMemberCollectionDates] = useState(new Map());
   const [goals, setGoals] = useState([]);
   const [memberGoals, setMemberGoals] = useState([]);
   const [newGoalTitle, setNewGoalTitle] = useState("");
@@ -336,11 +351,17 @@ const StampBrowsePage = () => {
   useEffect(() => {
     fetch("/api/stamps/wishlist", { credentials: "include" })
       .then((r) => r.json())
-      .then((slugs) => setWishlist(new Set(slugs)))
+      .then((items) => {
+        setWishlist(new Set(items.map((i) => i.slug)));
+        setWishlistDates(new Map(items.map((i) => [i.slug, i.added_at])));
+      })
       .catch(() => {});
     fetch("/api/stamps/collection", { credentials: "include" })
       .then((r) => r.json())
-      .then((slugs) => setCollection(new Set(slugs)))
+      .then((items) => {
+        setCollection(new Set(items.map((i) => i.slug)));
+        setCollectionDates(new Map(items.map((i) => [i.slug, i.added_at])));
+      })
       .catch(() => {});
     fetch("/api/stamps/users", { credentials: "include" })
       .then((r) => r.json())
@@ -379,11 +400,13 @@ const StampBrowsePage = () => {
       fetch(`/api/stamps/user/${encodeURIComponent(selectedMember)}/collection/order`, { credentials: "include" }),
     ])
       .then(async ([wRes, cRes, gRes, woRes, coRes]) => {
-        const [wSlugs, cSlugs, gData, woSlugs, coSlugs] = await Promise.all([
+        const [wItems, cItems, gData, woSlugs, coSlugs] = await Promise.all([
           wRes.json(), cRes.json(), gRes.json(), woRes.json(), coRes.json(),
         ]);
-        setMemberWishlist(new Set(wSlugs));
-        setMemberCollection(new Set(cSlugs));
+        setMemberWishlist(new Set(wItems.map((i) => i.slug)));
+        setMemberWishlistDates(new Map(wItems.map((i) => [i.slug, i.added_at])));
+        setMemberCollection(new Set(cItems.map((i) => i.slug)));
+        setMemberCollectionDates(new Map(cItems.map((i) => [i.slug, i.added_at])));
         setMemberGoals(gData);
         if (woSlugs.length) setMemberWishlistOrder(woSlugs);
         if (coSlugs.length) setMemberCollectionOrder(coSlugs);
@@ -402,12 +425,23 @@ const StampBrowsePage = () => {
         inList ? next.delete(slug) : next.add(slug);
         return next;
       });
-      if (!inList)
+      setWishlistDates((prev) => {
+        const next = new Map(prev);
+        inList ? next.delete(slug) : next.set(slug, new Date().toISOString());
+        return next;
+      });
+      if (!inList) {
         setCollection((prev) => {
           const next = new Set(prev);
           next.delete(slug);
           return next;
         });
+        setCollectionDates((prev) => {
+          const next = new Map(prev);
+          next.delete(slug);
+          return next;
+        });
+      }
       try {
         await fetch(`/api/stamps/wishlist/${slug}`, {
           method: inList ? "DELETE" : "POST",
@@ -417,6 +451,11 @@ const StampBrowsePage = () => {
         setWishlist((prev) => {
           const next = new Set(prev);
           inList ? next.add(slug) : next.delete(slug);
+          return next;
+        });
+        setWishlistDates((prev) => {
+          const next = new Map(prev);
+          inList ? next.delete(slug) : next.set(slug, new Date().toISOString());
           return next;
         });
         if (!inList)
@@ -443,12 +482,23 @@ const StampBrowsePage = () => {
         inList ? next.delete(slug) : next.add(slug);
         return next;
       });
-      if (!inList)
+      setCollectionDates((prev) => {
+        const next = new Map(prev);
+        inList ? next.delete(slug) : next.set(slug, new Date().toISOString());
+        return next;
+      });
+      if (!inList) {
         setWishlist((prev) => {
           const next = new Set(prev);
           next.delete(slug);
           return next;
         });
+        setWishlistDates((prev) => {
+          const next = new Map(prev);
+          next.delete(slug);
+          return next;
+        });
+      }
       try {
         await fetch(`/api/stamps/collection/${slug}`, {
           method: inList ? "DELETE" : "POST",
@@ -458,6 +508,11 @@ const StampBrowsePage = () => {
         setCollection((prev) => {
           const next = new Set(prev);
           inList ? next.add(slug) : next.delete(slug);
+          return next;
+        });
+        setCollectionDates((prev) => {
+          const next = new Map(prev);
+          inList ? next.delete(slug) : next.set(slug, new Date().toISOString());
           return next;
         });
         if (!inList)
@@ -615,6 +670,17 @@ const StampBrowsePage = () => {
   const activeCollection = selectedMember ? memberCollection : collection;
   const activeGoals = selectedMember ? memberGoals : goals;
 
+  const activeDates = useMemo(() => {
+    if (selectedMember) {
+      if (view === "wishlist") return memberWishlistDates;
+      if (view === "collection") return memberCollectionDates;
+      return null;
+    }
+    if (view === "wishlist") return wishlistDates;
+    if (view === "collection") return collectionDates;
+    return null;
+  }, [view, selectedMember, wishlistDates, collectionDates, memberWishlistDates, memberCollectionDates]);
+
   const activeOrder = useMemo(() => {
     if (selectedMember) {
       if (view === "wishlist") return memberWishlistOrder;
@@ -662,6 +728,14 @@ const StampBrowsePage = () => {
       });
     }
 
+    if (sortDir === "added_asc" || sortDir === "added_desc") {
+      return [...base].sort((a, b) => {
+        const da = new Date(activeDates?.get(a.slug) ?? 0);
+        const db = new Date(activeDates?.get(b.slug) ?? 0);
+        return sortDir === "added_asc" ? da - db : db - da;
+      });
+    }
+
     const TBA = new Date("9999-12-31");
     return [...base].sort((a, b) => {
       const da = a.issued ? new Date(a.issued) : TBA;
@@ -680,6 +754,7 @@ const StampBrowsePage = () => {
     activeWishlist,
     activeCollection,
     activeOrder,
+    activeDates,
   ]);
 
   const baseCount =
@@ -700,13 +775,18 @@ const StampBrowsePage = () => {
 
   useEffect(() => {
     if (sortDir === "custom" && !activeOrder) setSortDir("desc");
-  }, [sortDir, activeOrder]);
+    if ((sortDir === "added_asc" || sortDir === "added_desc") && view === "all") setSortDir("desc");
+  }, [sortDir, activeOrder, view]);
 
-  const cycleSortDir = () => {
-    if (sortDir === "desc") { setSortDir("asc"); return; }
-    if (sortDir === "asc") { setSortDir(activeOrder ? "custom" : "desc"); return; }
-    setSortDir("desc");
-  };
+  const sortOptions = useMemo(() => [
+    { value: "desc", label: "Newest first" },
+    { value: "asc", label: "Oldest first" },
+    ...(view !== "all" ? [
+      { value: "added_desc", label: "Date added (newest)" },
+      { value: "added_asc", label: "Date added (oldest)" },
+    ] : []),
+    ...(activeOrder ? [{ value: "custom", label: selectedMember ? `${cap(selectedMember)}'s Order` : "My Order" }] : []),
+  ], [view, activeOrder, selectedMember]);
 
   const enterReorderMode = useCallback(() => {
     const slugSet = view === "wishlist" ? activeWishlist : activeCollection;
@@ -986,24 +1066,14 @@ const StampBrowsePage = () => {
                     <BsGripVertical /> Reorder
                   </button>
                 )}
-                <button
-                  className="stamp-sort-btn"
-                  onClick={cycleSortDir}
-                  title={
-                    sortDir === "custom"
-                      ? "Click to sort newest first"
-                      : sortDir === "desc"
-                        ? "Click to sort oldest first"
-                        : activeOrder
-                          ? "Click for My Order"
-                          : "Click to sort newest first"
-                  }
-                >
-                  {sortDir === "custom" ? <BsListOl /> : sortDir === "desc" ? <BsSortDown /> : <BsSortUp />}
-                  {sortDir === "custom"
-                    ? selectedMember ? `${cap(selectedMember)}'s Order` : "My Order"
-                    : sortDir === "desc" ? "Newest first" : "Oldest first"}
-                </button>
+                <Select
+                  isSearchable={false}
+                  options={sortOptions}
+                  value={sortOptions.find((o) => o.value === sortDir) ?? sortOptions[0]}
+                  onChange={(opt) => setSortDir(opt.value)}
+                  styles={SORT_SELECT_STYLES}
+                  classNamePrefix="rs"
+                />
               </>
             )}
           </div>

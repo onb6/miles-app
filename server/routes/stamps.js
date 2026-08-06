@@ -4,14 +4,14 @@ const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
-// GET /api/stamps/wishlist — return slugs in the current user's wishlist
+// GET /api/stamps/wishlist — return slugs + added_at for the current user's wishlist
 router.get("/wishlist", requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "SELECT slug FROM stamp_wishlist WHERE user_id = $1 ORDER BY added_at",
+      "SELECT slug, added_at FROM stamp_wishlist WHERE user_id = $1 ORDER BY added_at",
       [req.user.user_id]
     );
-    res.json(rows.map((r) => r.slug));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch wishlist" });
@@ -55,14 +55,14 @@ router.delete("/wishlist/:slug", requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/stamps/collection — return slugs in the current user's collection
+// GET /api/stamps/collection — return slugs + added_at for the current user's collection
 router.get("/collection", requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "SELECT slug FROM stamp_collection WHERE user_id = $1 ORDER BY added_at",
+      "SELECT slug, added_at FROM stamp_collection WHERE user_id = $1 ORDER BY added_at",
       [req.user.user_id]
     );
-    res.json(rows.map((r) => r.slug));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch collection" });
@@ -380,34 +380,34 @@ router.get("/user/:username/collection/order", requireAuth, async (req, res) => 
   }
 });
 
-// GET /api/stamps/user/:username/wishlist — another user's wishlist slugs
+// GET /api/stamps/user/:username/wishlist — another user's wishlist slugs + added_at
 router.get("/user/:username/wishlist", requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT w.slug FROM stamp_wishlist w
+      `SELECT w.slug, w.added_at FROM stamp_wishlist w
        JOIN users u ON u.id = w.user_id
        WHERE LOWER(u.username) = LOWER($1)
        ORDER BY w.added_at`,
       [req.params.username]
     );
-    res.json(rows.map((r) => r.slug));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch wishlist" });
   }
 });
 
-// GET /api/stamps/user/:username/collection — another user's collection slugs
+// GET /api/stamps/user/:username/collection — another user's collection slugs + added_at
 router.get("/user/:username/collection", requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT c.slug FROM stamp_collection c
+      `SELECT c.slug, c.added_at FROM stamp_collection c
        JOIN users u ON u.id = c.user_id
        WHERE LOWER(u.username) = LOWER($1)
        ORDER BY c.added_at`,
       [req.params.username]
     );
-    res.json(rows.map((r) => r.slug));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch collection" });
