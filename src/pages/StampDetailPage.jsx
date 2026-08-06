@@ -30,6 +30,8 @@ const StampDetailPage = () => {
   const [togglingWishlist, setTogglingWishlist] = useState(false);
   const [togglingCollection, setTogglingCollection] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalIdx, setModalIdx] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -108,6 +110,10 @@ const StampDetailPage = () => {
       : [stamp.img].filter(Boolean)
     : [];
 
+  const allImages = stamp
+    ? [...images, ...(stamp.sheet_img && !images.includes(stamp.sheet_img) ? [stamp.sheet_img] : [])]
+    : [];
+
   const prevImg = useCallback(
     () => setActiveImg((i) => (i - 1 + images.length) % images.length),
     [images.length],
@@ -116,18 +122,43 @@ const StampDetailPage = () => {
     () => setActiveImg((i) => (i + 1) % images.length),
     [images.length],
   );
+  const openModal = useCallback((idx) => { setModalIdx(idx); setModalOpen(true); }, []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
+  const modalPrev = useCallback(
+    () => setModalIdx((i) => (i - 1 + allImages.length) % allImages.length),
+    [allImages.length],
+  );
+  const modalNext = useCallback(
+    () => setModalIdx((i) => (i + 1) % allImages.length),
+    [allImages.length],
+  );
 
   const swipeHandlers = useSwipe(nextImg, prevImg);
 
   useEffect(() => {
-    if (images.length < 2) return;
+    if (images.length < 2 || modalOpen) return;
     const onKey = (e) => {
       if (e.key === "ArrowLeft") prevImg();
       if (e.key === "ArrowRight") nextImg();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [images.length, prevImg, nextImg]);
+  }, [images.length, prevImg, nextImg, modalOpen]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeModal();
+      if (e.key === "ArrowLeft") modalPrev();
+      if (e.key === "ArrowRight") modalNext();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen, closeModal, modalPrev, modalNext]);
 
   if (!stamp) {
     return (
@@ -191,7 +222,9 @@ const StampDetailPage = () => {
             <img
               src={images[activeImg]}
               alt={stamp.name}
-              className="stamp-detail-img"
+              className="stamp-detail-img stamp-detail-img--zoomable"
+              onDoubleClick={() => openModal(activeImg)}
+              title="Double-click to zoom"
             />
             {images.length > 1 && (
               <>
@@ -231,7 +264,9 @@ const StampDetailPage = () => {
               <img
                 src={stamp.sheet_img}
                 alt={`${stamp.name} full sheet`}
-                className="stamp-sheet-img"
+                className="stamp-sheet-img stamp-detail-img--zoomable"
+                onDoubleClick={() => openModal(allImages.indexOf(stamp.sheet_img))}
+                title="Double-click to zoom"
               />
             </div>
           )}
@@ -346,6 +381,36 @@ const StampDetailPage = () => {
           )}
         </div>
       </div>
+
+      {modalOpen && (
+        <div className="stamp-lightbox-overlay" onClick={closeModal}>
+          <button className="stamp-lightbox-close" onClick={closeModal} aria-label="Close">×</button>
+          {allImages.length > 1 && (
+            <button
+              className="stamp-lightbox-arrow stamp-lightbox-arrow--prev"
+              onClick={(e) => { e.stopPropagation(); modalPrev(); }}
+              aria-label="Previous image"
+            >
+              &#8249;
+            </button>
+          )}
+          <div className="stamp-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img src={allImages[modalIdx]} alt={stamp.name} className="stamp-lightbox-img" />
+          </div>
+          {allImages.length > 1 && (
+            <button
+              className="stamp-lightbox-arrow stamp-lightbox-arrow--next"
+              onClick={(e) => { e.stopPropagation(); modalNext(); }}
+              aria-label="Next image"
+            >
+              &#8250;
+            </button>
+          )}
+          {allImages.length > 1 && (
+            <span className="stamp-lightbox-counter">{modalIdx + 1} / {allImages.length}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
