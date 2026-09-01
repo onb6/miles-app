@@ -5,6 +5,7 @@
   margin-bottom: 24px;
   width: 21rem;
   height: 28rem;
+  overflow: hidden;
 }
 
 @media (max-width: 700px) {

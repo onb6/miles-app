@@ -9,6 +9,7 @@ import OlipopRankingPage from "./pages/OlipopRankingPage";
 import StampBrowsePage from "./pages/StampBrowsePage";
 import StampDetailPage from "./pages/StampDetailPage";
 import ProfilePage from "./pages/ProfilePage";
+import TodoListPage from "./pages/TodoListPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -43,6 +44,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <OlipopRankingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/todo"
+            element={
+              <ProtectedRoute>
+                <TodoListPage />
               </ProtectedRoute>
             }
           />

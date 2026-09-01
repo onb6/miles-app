@@ -7,7 +7,7 @@
   height: 70px;
   display: flex;
   flex-direction: row;
-  padding: 0 36px;
+  padding: 14px 24px;
   background-color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   gap: 24px;

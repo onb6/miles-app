@@ -3,6 +3,7 @@ import MilesCard from "./components/MilesCard";
 import OlipopImg from "./assets/olipop.png";
 import StampsImg from "./assets/stamps.jpg";
 import MessageImg from "./assets/messages.jpg";
+import ToDoImg from "./assets/todo-list.jpg";
 import ProfileDropdown from "./components/ProfileDropdown";
 
 const LandingPage = () => {
@@ -33,6 +34,15 @@ const LandingPage = () => {
       buttonDisabled: false,
       buttonLink: "/stamps",
       cardImg: StampsImg,
+    },
+    {
+      title: "To-do Lists",
+      subtitle: "So much to do!",
+      text: "Lists of activities for Miles and Olivia",
+      buttonText: "View To-do Lists!",
+      buttonDisabled: false,
+      buttonLink: "/todo",
+      cardImg: ToDoImg,
     },
   ];
 
