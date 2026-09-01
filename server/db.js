@@ -137,6 +137,34 @@ const initDb = async () => {
     ALTER TABLE users
       ADD COLUMN IF NOT EXISTS avatar_url TEXT
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todo_lists (
+      id         SERIAL PRIMARY KEY,
+      title      TEXT NOT NULL DEFAULT 'Untitled List',
+      start_date DATE,
+      end_date   DATE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS start_date DATE`);
+  await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS end_date DATE`);
+  await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS icon_url TEXT`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todo_items (
+      id         SERIAL PRIMARY KEY,
+      list_id    INTEGER NOT NULL REFERENCES todo_lists(id) ON DELETE CASCADE,
+      text       TEXT NOT NULL DEFAULT '',
+      completed  BOOLEAN NOT NULL DEFAULT FALSE,
+      position   INTEGER NOT NULL DEFAULT 0,
+      added_by   TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 };
 
 module.exports = { pool, initDb };

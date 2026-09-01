@@ -7,7 +7,12 @@ const AuthPage = () => {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ username: "", email: "", identifier: "", password: "" });
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    identifier: "",
+    password: "",
+  });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -41,13 +46,19 @@ const AuthPage = () => {
         <div className="auth-tabs">
           <button
             className={`auth-tab ${mode === "login" ? "active" : ""}`}
-            onClick={() => { setMode("login"); setError(null); }}
+            onClick={() => {
+              setMode("login");
+              setError(null);
+            }}
           >
             Log In
           </button>
           <button
             className={`auth-tab ${mode === "register" ? "active" : ""}`}
-            onClick={() => { setMode("register"); setError(null); }}
+            onClick={() => {
+              setMode("register");
+              setError(null);
+            }}
           >
             Register
           </button>
@@ -107,7 +118,11 @@ const AuthPage = () => {
           {error && <p className="auth-error">{error}</p>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? "Please wait…" : mode === "login" ? "Log In" : "Create Account"}
+            {loading
+              ? "Please wait…"
+              : mode === "login"
+                ? "Log In"
+                : "Create Account"}
           </button>
         </form>
       </div>

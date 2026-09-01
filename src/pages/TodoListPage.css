@@ -1,0 +1,833 @@
+/* ─── Page shell ───────────────────────────────────────────────────────────── */
+.todo-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f1f8fa;
+  color: #1a3a44;
+  font-family: inherit;
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────────── */
+.todo-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid rgba(40, 110, 132, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 12px;
+}
+
+.todo-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  pointer-events: none;
+  color: #286e84;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.todo-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #286e84;
+  font-size: 1.3rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.todo-back-btn:hover {
+  background: rgba(40, 110, 132, 0.08);
+}
+
+/* ─── Two-column layout ────────────────────────────────────────────────────── */
+.todo-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Sidebar ──────────────────────────────────────────────────────────────── */
+.todo-sidebar {
+  width: 260px;
+  min-width: 220px;
+  border-right: 1px solid rgba(40, 110, 132, 0.12);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.todo-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 14px 10px;
+  padding: 8px 14px;
+  background: #286e84;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.todo-new-btn:hover {
+  background: #1f5567;
+}
+
+.todo-sidebar-hint {
+  padding: 0 18px;
+  color: #8aabba;
+  font-size: 0.85rem;
+}
+
+.todo-lists-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.todo-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+}
+.todo-nav-item:hover {
+  background: rgba(40, 110, 132, 0.06);
+}
+.todo-nav-item.active {
+  background: rgba(40, 110, 132, 0.12);
+}
+
+.todo-nav-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #1a3a44;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.todo-nav-item.active .todo-nav-title {
+  color: #286e84;
+}
+
+.todo-nav-time {
+  font-size: 0.75rem;
+  color: #8aabba;
+}
+
+/* ─── Editor ───────────────────────────────────────────────────────────────── */
+.todo-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 28px 36px;
+}
+
+.todo-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8aabba;
+  font-size: 0.95rem;
+}
+
+.todo-editor-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* ─── List icon ────────────────────────────────────────────────────────────── */
+.todo-list-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.todo-list-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.todo-list-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed #c0d8e0;
+  border-radius: 10px;
+  background: rgba(40, 110, 132, 0.03);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.todo-list-icon-wrapper:hover .todo-list-icon-placeholder {
+  border-color: #286e84;
+}
+
+.todo-list-icon-edit-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 58, 68, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: 10px;
+}
+
+.todo-list-icon-wrapper:hover .todo-list-icon-edit-overlay {
+  opacity: 1;
+}
+
+.todo-title-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #1a3a44;
+  padding: 0;
+}
+.todo-title-input::placeholder {
+  color: #c0d8e0;
+}
+
+/* title wraps input + peer label stacked */
+.todo-title-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.todo-field-peer-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.85;
+  animation: peer-label-in 0.2s ease;
+  padding-left: 2px;
+}
+
+/* small dot next to date label when peer is editing */
+.todo-date-peer-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+  animation: peer-label-in 0.2s ease;
+  flex-shrink: 0;
+}
+
+.todo-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #c0d8e0;
+  font-size: 1.2rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  flex-shrink: 0;
+}
+.todo-move-btn:hover {
+  color: #286e84;
+  background: rgba(40, 110, 132, 0.08);
+}
+
+.todo-delete-list-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #c0d8e0;
+  font-size: 1.2rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  flex-shrink: 0;
+}
+.todo-delete-list-btn:hover {
+  color: #e05c5c;
+  background: rgba(224, 92, 92, 0.08);
+}
+
+.todo-items-hint {
+  color: #8aabba;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ─── Date row ─────────────────────────────────────────────────────────────── */
+.todo-dates-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.todo-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8aabba;
+  margin: 0;
+}
+
+.todo-date-sep {
+  color: #c0d8e0;
+  font-size: 0.9rem;
+}
+
+/* react-datepicker input */
+.todo-datepicker-wrapper {
+  display: inline-block;
+}
+
+.todo-datepicker-wrapper .react-datepicker__input-container input {
+  border: 1px solid rgba(40, 110, 132, 0.2);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  color: #1a3a44;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  width: 120px;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.todo-datepicker-wrapper .react-datepicker__input-container input:focus {
+  border-color: #286e84;
+}
+.todo-datepicker-wrapper .react-datepicker__input-container input::placeholder {
+  color: #c0d8e0;
+}
+
+/* Outer wrapper injected via calendarContainer — owns the border/shadow */
+.todo-calendar-with-clear {
+  border: 1px solid rgba(40, 110, 132, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(40, 110, 132, 0.14);
+  overflow: hidden;
+  background: #fff;
+}
+
+.todo-datepicker-clear-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 8px 16px 8px;
+  border-top: 1px solid rgba(40, 110, 132, 0.08);
+}
+
+.todo-datepicker-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #e05c5c;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.todo-datepicker-clear-btn:hover {
+  font-weight: 600;
+}
+
+/* react-datepicker calendar popup — border/shadow moved to wrapper */
+.todo-calendar.react-datepicker {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: inherit;
+  overflow: hidden;
+}
+
+.todo-calendar .react-datepicker__header {
+  background: #286e84;
+  border-bottom: none;
+  border-radius: 0;
+  padding-top: 12px;
+}
+
+.todo-calendar .react-datepicker__current-month {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.todo-calendar .react-datepicker__day-name {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.todo-calendar .react-datepicker__navigation-icon::before {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.todo-calendar
+  .react-datepicker__navigation:hover
+  .react-datepicker__navigation-icon::before {
+  border-color: #fff;
+}
+
+.todo-calendar .react-datepicker__day {
+  color: #1a3a44;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.todo-calendar .react-datepicker__day:hover {
+  background: rgba(40, 110, 132, 0.1);
+  color: #286e84;
+}
+.todo-calendar .react-datepicker__day--selected,
+.todo-calendar .react-datepicker__day--keyboard-selected {
+  background: #286e84;
+  color: #fff;
+}
+.todo-calendar .react-datepicker__day--selected:hover {
+  background: #1f5567;
+  color: #fff;
+}
+.todo-calendar .react-datepicker__day--today {
+  font-weight: 700;
+  color: #286e84;
+}
+.todo-calendar .react-datepicker__day--today.react-datepicker__day--selected {
+  color: #fff;
+}
+.todo-calendar .react-datepicker__day--outside-month {
+  color: #c0d8e0;
+}
+
+.todo-calendar .react-datepicker__triangle {
+  display: none;
+}
+
+/* ─── Presence ─────────────────────────────────────────────────────────────── */
+.todo-presence-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.todo-presence-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  box-shadow: 0 0 0 2px #fff;
+  transition: transform 0.15s;
+}
+.todo-presence-dot:hover {
+  transform: scale(1.1);
+}
+
+/* ─── Items ────────────────────────────────────────────────────────────────── */
+.todo-items-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  transition: background 0.1s;
+  group: todo-item;
+}
+.todo-item:hover {
+  background: rgba(40, 110, 132, 0.04);
+}
+.todo-item:hover .todo-item-copy,
+.todo-item:hover .todo-item-delete {
+  opacity: 1;
+}
+
+.todo-item-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #9fc8d4;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  padding: 0;
+}
+.todo-item-checkbox:hover {
+  border-color: #286e84;
+}
+.todo-item.completed .todo-item-checkbox {
+  border-color: #286e84;
+  background: #286e84;
+}
+
+.checkmark {
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* item body stacks text + peer label */
+.todo-item-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.todo-item-text {
+  font-size: 0.95rem;
+  color: #1a3a44;
+  line-height: 1.4;
+  cursor: text;
+  word-break: break-word;
+}
+.todo-item.completed .todo-item-text {
+  color: #8aabba;
+}
+
+.todo-item-edit-input {
+  border: none;
+  border-bottom: 1px solid #286e84;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #1a3a44;
+  padding: 0;
+  width: 100%;
+}
+
+/* peer editing label */
+.todo-peer-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.85;
+  animation: peer-label-in 0.2s ease;
+}
+
+@keyframes peer-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+}
+
+/* left border glow when a peer is editing */
+.todo-item.peer-editing {
+  border-left: 2.5px solid var(--peer-color);
+  padding-left: 9px;
+  border-radius: 0 6px 6px 0;
+}
+
+/* click flash animation */
+@keyframes todo-flash {
+  0% {
+    background: var(--flash-color, rgba(40, 110, 132, 0.15));
+  }
+  100% {
+    background: transparent;
+  }
+}
+.todo-item.todo-flashing {
+  animation: todo-flash 0.9s ease-out forwards;
+}
+
+.todo-item-copy,
+.todo-item-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #c0d8e0;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0;
+  transition:
+    color 0.15s,
+    opacity 0.15s;
+  display: flex;
+  align-items: center;
+}
+.todo-item-copy:hover {
+  color: #286e84;
+}
+.todo-item-delete {
+  font-size: 1.25rem;
+}
+.todo-item-delete:hover {
+  color: #e05c5c;
+}
+
+/* ─── Add item form ────────────────────────────────────────────────────────── */
+.todo-add-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  margin-top: 2px;
+}
+
+.todo-add-icon {
+  width: 20px;
+  height: 20px;
+  border: 2px dashed #c0d8e0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #9fc8d4;
+  font-size: 0.85rem;
+  padding: 0;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.todo-add-icon:hover {
+  border-color: #286e84;
+  color: #286e84;
+}
+
+.todo-add-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #1a3a44;
+}
+.todo-add-input::placeholder {
+  color: #c0d8e0;
+}
+
+/* ─── Move modal ───────────────────────────────────────────────────────────── */
+.todo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 58, 68, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlay-in 0.15s ease;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.todo-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 32px rgba(40, 110, 132, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: modal-in 0.15s ease;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.todo-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a3a44;
+}
+
+.todo-modal-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8aabba;
+}
+
+.todo-modal-select {
+  border: 1px solid rgba(40, 110, 132, 0.22);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: #1a3a44;
+  font-family: inherit;
+  background: #f1f8fa;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.todo-modal-select:focus {
+  border-color: #286e84;
+}
+
+.todo-modal-input {
+  border: 1px solid rgba(40, 110, 132, 0.22);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: #1a3a44;
+  font-family: inherit;
+  background: #f1f8fa;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.todo-modal-input:focus {
+  border-color: #286e84;
+}
+.todo-modal-input::placeholder {
+  color: #c0d8e0;
+}
+
+.todo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.todo-modal-cancel {
+  background: none;
+  border: 1px solid rgba(40, 110, 132, 0.18);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #8aabba;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.todo-modal-cancel:hover {
+  border-color: #286e84;
+  color: #286e84;
+}
+
+.todo-modal-confirm {
+  background: #286e84;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.todo-modal-confirm:hover:not(:disabled) {
+  background: #1f5567;
+}
+.todo-modal-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 650px) {
+  .todo-layout {
+    flex-direction: column;
+  }
+
+  .todo-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(40, 110, 132, 0.12);
+    max-height: 40vh;
+  }
+
+  .todo-editor {
+    padding: 18px 18px;
+  }
+
+  .todo-title-input {
+    font-size: 1.3rem;
+  }
+}
