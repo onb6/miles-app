@@ -908,24 +908,33 @@
   cursor: not-allowed;
 }
 
+/* ─── Mobile back button (hidden on desktop) ───────────────────────────────── */
+.todo-mobile-back { display: none; }
+
 /* ─── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 650px) {
-  .todo-layout {
-    flex-direction: column;
-  }
+  .todo-layout { position: relative; }
 
-  .todo-sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid rgba(40, 110, 132, 0.12);
-    max-height: 40vh;
-  }
+  .todo-layout.mobile-list .todo-editor   { display: none; }
+  .todo-layout.mobile-editor .todo-sidebar { display: none; }
 
-  .todo-editor {
-    padding: 18px 18px;
-  }
+  .todo-sidebar { width: 100%; border-right: none; }
 
-  .todo-title-input {
-    font-size: 1.3rem;
+  .todo-editor { padding: 18px; }
+
+  .todo-title-input { font-size: 1.3rem; }
+
+  .todo-mobile-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #286e84;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0 0 16px;
+    font-family: inherit;
   }
 }

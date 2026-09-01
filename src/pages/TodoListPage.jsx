@@ -133,6 +133,7 @@ const TodoListPage = () => {
   // sidebar
   const [tab, setTab] = useState("active"); // "active" | "archived"
   const [search, setSearch] = useState("");
+  const [mobileView, setMobileView] = useState("list"); // "list" | "editor"
   // move modal
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveTarget, setMoveTarget] = useState("");
@@ -292,6 +293,11 @@ const TodoListPage = () => {
     });
   };
 
+  const selectList = (id) => {
+    setSelectedListId(id);
+    setMobileView("editor");
+  };
+
   const createList = async () => {
     const res = await fetch("/api/todos", {
       method: "POST",
@@ -302,6 +308,7 @@ const TodoListPage = () => {
     if (!res.ok) return;
     const list = await res.json();
     setSelectedListId(list.id);
+    setMobileView("editor");
   };
 
   const handleTitleChange = (e) => {
@@ -515,7 +522,7 @@ const TodoListPage = () => {
         <ProfileDropdown />
       </header>
 
-      <div className="todo-layout">
+      <div className={`todo-layout ${mobileView === "editor" ? "mobile-editor" : "mobile-list"}`}>
         {/* ── Sidebar ── */}
         <aside className="todo-sidebar">
           <button className="todo-new-btn" onClick={createList}>
@@ -566,7 +573,7 @@ const TodoListPage = () => {
                     <li
                       key={list.id}
                       className={`todo-nav-item${list.id === selectedListId ? " active" : ""}`}
-                      onClick={() => setSelectedListId(list.id)}
+                      onClick={() => selectList(list.id)}
                     >
                       <span className="todo-nav-title">{list.title || "Untitled"}</span>
                       <span className="todo-nav-time">{formatRelativeTime(list.updated_at)}</span>
@@ -580,6 +587,9 @@ const TodoListPage = () => {
 
         {/* ── Editor ── */}
         <main className="todo-editor">
+          <button className="todo-mobile-back" onClick={() => setMobileView("list")}>
+            <BiArrowBack /> All lists
+          </button>
           {!selectedListId ? (
             <div className="todo-empty-state">
               <p>Select a list or create a new one</p>
