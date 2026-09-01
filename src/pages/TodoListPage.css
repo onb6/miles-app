@@ -93,6 +93,62 @@
   font-size: 0.85rem;
 }
 
+.todo-sidebar-tabs {
+  display: flex;
+  margin: 0 12px 2px;
+  border-bottom: 1px solid rgba(40, 110, 132, 0.12);
+  flex-shrink: 0;
+}
+
+.todo-sidebar-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 7px 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #8aabba;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.todo-sidebar-tab:hover { color: #286e84; }
+.todo-sidebar-tab.active {
+  color: #286e84;
+  border-bottom-color: #286e84;
+}
+
+.todo-sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 12px 4px;
+  padding: 5px 10px;
+  background: rgba(40, 110, 132, 0.05);
+  border-radius: 7px;
+  border: 1px solid rgba(40, 110, 132, 0.1);
+  flex-shrink: 0;
+}
+
+.todo-sidebar-search-icon {
+  color: #9fc8d4;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.todo-sidebar-search-input {
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.84rem;
+  color: #1a3a44;
+  width: 100%;
+  font-family: inherit;
+}
+.todo-sidebar-search-input::placeholder { color: #b8d4de; }
+
 .todo-lists-nav {
   list-style: none;
   margin: 0;
@@ -209,6 +265,7 @@
 .todo-list-icon-wrapper:hover .todo-list-icon-edit-overlay {
   opacity: 1;
 }
+.todo-list-icon-wrapper.archived { cursor: default; }
 
 .todo-title-input {
   flex: 1;
@@ -222,6 +279,10 @@
 }
 .todo-title-input::placeholder {
   color: #c0d8e0;
+}
+.todo-title-input.archived {
+  color: #8aabba;
+  cursor: default;
 }
 
 /* title wraps input + peer label stacked */
@@ -251,6 +312,37 @@
   animation: peer-label-in 0.2s ease;
   flex-shrink: 0;
 }
+
+.todo-archived-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(40, 110, 132, 0.07);
+  border: 1px solid rgba(40, 110, 132, 0.14);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  color: #5a9aaf;
+  margin-bottom: 20px;
+}
+
+.todo-archive-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #c0d8e0;
+  font-size: 1.2rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.todo-archive-btn:hover { color: #286e84; background: rgba(40, 110, 132, 0.08); }
+.todo-archive-btn.unarchive { color: #286e84; }
+.todo-archive-btn.unarchive:hover { color: #1f5567; background: rgba(40, 110, 132, 0.08); }
 
 .todo-move-btn {
   display: flex;
@@ -522,6 +614,12 @@
 .todo-item-checkbox:hover {
   border-color: #286e84;
 }
+.todo-item.read-only .todo-item-checkbox {
+  cursor: default;
+  opacity: 0.5;
+}
+.todo-item.read-only .todo-item-checkbox:hover { border-color: #9fc8d4; }
+.todo-item.read-only .todo-item-text { cursor: default; }
 .todo-item.completed .todo-item-checkbox {
   border-color: #286e84;
   background: #286e84;

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import DatePicker from "react-datepicker";
-import { BiArrowBack, BiPlus, BiTrash, BiCopy, BiCheck, BiTransferAlt, BiPencil } from "react-icons/bi";
+import { BiArrowBack, BiPlus, BiTrash, BiCopy, BiCheck, BiTransferAlt, BiPencil, BiArchiveIn, BiArchiveOut, BiSearch } from "react-icons/bi";
 import ProfileDropdown from "../components/ProfileDropdown";
 import "react-datepicker/dist/react-datepicker.css";
 import "./TodoListPage.css";
@@ -34,6 +34,7 @@ const TodoItem = ({
   onStopEditing,
   editingUser,
   flashColor,
+  readOnly,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
@@ -49,6 +50,7 @@ const TodoItem = ({
   useEffect(() => { setEditText(item.text); }, [item.text]);
 
   const startEditing = () => {
+    if (readOnly) return;
     setEditing(true);
     onStartEditing?.(item.id);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -62,7 +64,7 @@ const TodoItem = ({
 
   return (
     <div
-      className={`todo-item${item.completed ? " completed" : ""}${flashColor ? " todo-flashing" : ""}${editingUser ? " peer-editing" : ""}`}
+      className={`todo-item${item.completed ? " completed" : ""}${flashColor ? " todo-flashing" : ""}${editingUser ? " peer-editing" : ""}${readOnly ? " read-only" : ""}`}
       style={{
         ...(flashColor ? { "--flash-color": flashColor + "28" } : {}),
         ...(editingUser ? { "--peer-color": editingUser.color } : {}),
@@ -70,7 +72,8 @@ const TodoItem = ({
     >
       <button
         className="todo-item-checkbox"
-        onClick={() => onToggle(item)}
+        onClick={readOnly ? undefined : () => onToggle(item)}
+        disabled={readOnly}
         aria-label={item.completed ? "Mark incomplete" : "Mark complete"}
       >
         {item.completed && <span className="checkmark">✓</span>}
@@ -101,12 +104,16 @@ const TodoItem = ({
         )}
       </div>
 
-      <button className="todo-item-copy" onClick={handleCopy} aria-label="Copy item">
-        {copied ? <BiCheck /> : <BiCopy />}
-      </button>
-      <button className="todo-item-delete" onClick={() => onDelete(item.id)} aria-label="Delete item">
-        ×
-      </button>
+      {!readOnly && (
+        <>
+          <button className="todo-item-copy" onClick={handleCopy} aria-label="Copy item">
+            {copied ? <BiCheck /> : <BiCopy />}
+          </button>
+          <button className="todo-item-delete" onClick={() => onDelete(item.id)} aria-label="Delete item">
+            ×
+          </button>
+        </>
+      )}
     </div>
   );
 };
@@ -123,6 +130,9 @@ const TodoListPage = () => {
   const [newItemText, setNewItemText] = useState("");
   const [loading, setLoading] = useState(true);
   const [itemsLoading, setItemsLoading] = useState(false);
+  // sidebar
+  const [tab, setTab] = useState("active"); // "active" | "archived"
+  const [search, setSearch] = useState("");
   // move modal
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveTarget, setMoveTarget] = useState("");
@@ -424,6 +434,18 @@ const TodoListPage = () => {
     setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   };
 
+  const handleArchiveToggle = async () => {
+    const currentList = lists.find((l) => l.id === selectedListId);
+    if (!currentList) return;
+    await fetch(`/api/todos/${selectedListId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ archived: !currentList.archived }),
+    });
+    // list-updated socket event will sync state for both users
+  };
+
   const handleIconUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !selectedListId) return;
@@ -499,23 +521,60 @@ const TodoListPage = () => {
           <button className="todo-new-btn" onClick={createList}>
             <BiPlus /> New List
           </button>
+
+          <div className="todo-sidebar-tabs">
+            <button
+              className={`todo-sidebar-tab${tab === "active" ? " active" : ""}`}
+              onClick={() => setTab("active")}
+            >
+              Active
+            </button>
+            <button
+              className={`todo-sidebar-tab${tab === "archived" ? " active" : ""}`}
+              onClick={() => setTab("archived")}
+            >
+              Archived
+            </button>
+          </div>
+
+          <div className="todo-sidebar-search">
+            <BiSearch className="todo-sidebar-search-icon" />
+            <input
+              className="todo-sidebar-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search lists…"
+            />
+          </div>
+
           {loading ? (
             <p className="todo-sidebar-hint">Loading…</p>
-          ) : lists.length === 0 ? (
-            <p className="todo-sidebar-hint">No lists yet</p>
           ) : (
-            <ul className="todo-lists-nav">
-              {lists.map((list) => (
-                <li
-                  key={list.id}
-                  className={`todo-nav-item${list.id === selectedListId ? " active" : ""}`}
-                  onClick={() => setSelectedListId(list.id)}
-                >
-                  <span className="todo-nav-title">{list.title || "Untitled"}</span>
-                  <span className="todo-nav-time">{formatRelativeTime(list.updated_at)}</span>
-                </li>
-              ))}
-            </ul>
+            (() => {
+              const visible = lists.filter(
+                (l) =>
+                  (tab === "archived" ? l.archived : !l.archived) &&
+                  (l.title || "Untitled").toLowerCase().includes(search.toLowerCase())
+              );
+              return visible.length === 0 ? (
+                <p className="todo-sidebar-hint">
+                  {search ? "No results" : tab === "archived" ? "No archived lists" : "No lists yet"}
+                </p>
+              ) : (
+                <ul className="todo-lists-nav">
+                  {visible.map((list) => (
+                    <li
+                      key={list.id}
+                      className={`todo-nav-item${list.id === selectedListId ? " active" : ""}`}
+                      onClick={() => setSelectedListId(list.id)}
+                    >
+                      <span className="todo-nav-title">{list.title || "Untitled"}</span>
+                      <span className="todo-nav-time">{formatRelativeTime(list.updated_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()
           )}
         </aside>
 
@@ -525,151 +584,180 @@ const TodoListPage = () => {
             <div className="todo-empty-state">
               <p>Select a list or create a new one</p>
             </div>
-          ) : (
-            <>
-              <div className="todo-editor-top">
-                {/* List icon */}
-                <div
-                  className="todo-list-icon-wrapper"
-                  onClick={() => iconInputRef.current?.click()}
-                  title="Click to change icon"
-                >
-                  {lists.find((l) => l.id === selectedListId)?.icon_url ? (
-                    <img
-                      src={lists.find((l) => l.id === selectedListId).icon_url}
-                      className="todo-list-icon"
-                      alt=""
-                    />
-                  ) : (
-                    <div className="todo-list-icon-placeholder" />
-                  )}
-                  <div className="todo-list-icon-edit-overlay">
-                    <BiPencil />
-                  </div>
-                </div>
-                <input
-                  ref={iconInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/gif,image/webp"
-                  style={{ display: "none" }}
-                  onChange={handleIconUpload}
-                />
-                <div className="todo-title-wrap">
-                  <input
-                    className="todo-title-input"
-                    value={title}
-                    onChange={handleTitleChange}
-                    placeholder="Untitled List"
-                    onFocus={() => { titleFocusedRef.current = true; emitActivity("editing", null, "title"); }}
-                    onBlur={() => { titleFocusedRef.current = false; emitActivity("idle"); }}
-                  />
-                  {editingFields.get("title") && (
-                    <span className="todo-field-peer-label" style={{ color: editingFields.get("title").color }}>
-                      {editingFields.get("title").username} is editing…
-                    </span>
-                  )}
-                </div>
-                {presenceUsers.length > 0 && (
-                  <div className="todo-presence-bar">
-                    {presenceUsers.map((u) => (
-                      <span
-                        key={u.userId}
-                        className="todo-presence-dot"
-                        style={{ background: getUserColor(u.userId) }}
-                        title={`${u.username} is here`}
-                      >
-                        {u.username[0].toUpperCase()}
-                      </span>
-                    ))}
+          ) : (() => {
+            const currentList = lists.find((l) => l.id === selectedListId);
+            const isArchived = !!currentList?.archived;
+            return (
+              <>
+                {isArchived && (
+                  <div className="todo-archived-banner">
+                    <BiArchiveIn />
+                    This list is archived — unarchive to make changes
                   </div>
                 )}
-                <button
-                  className="todo-move-btn"
-                  onClick={() => { setMoveTarget(""); setNewListName(""); setShowMoveModal(true); }}
-                  title="Move incomplete items to another list"
-                >
-                  <BiTransferAlt />
-                </button>
-                <button
-                  className="todo-delete-list-btn"
-                  onClick={() => handleDeleteList(selectedListId)}
-                  title="Delete list"
-                >
-                  <BiTrash />
-                </button>
-              </div>
 
-              <div className="todo-dates-row">
-                <label className="todo-date-label">
-                  Start
-                  {editingFields.get("start_date") && (
-                    <span className="todo-date-peer-dot" style={{ background: editingFields.get("start_date").color }} title={`${editingFields.get("start_date").username} is editing…`} />
-                  )}
-                  <DatePicker
-                    selected={startDate ? new Date(startDate + "T12:00:00") : null}
-                    onChange={(date) => handleDateChange("start_date", date)}
-                    dateFormat="MMM d, yyyy"
-                    placeholderText="Pick a date"
-                    calendarClassName="todo-calendar"
-                    wrapperClassName="todo-datepicker-wrapper"
-                    calendarContainer={startDateContainer}
-                    onCalendarOpen={() => emitActivity("editing", null, "start_date")}
-                    onCalendarClose={() => emitActivity("idle")}
+                <div className="todo-editor-top">
+                  {/* List icon */}
+                  <div
+                    className={`todo-list-icon-wrapper${isArchived ? " archived" : ""}`}
+                    onClick={isArchived ? undefined : () => iconInputRef.current?.click()}
+                    title={isArchived ? undefined : "Click to change icon"}
+                  >
+                    {currentList?.icon_url ? (
+                      <img src={currentList.icon_url} className="todo-list-icon" alt="" />
+                    ) : (
+                      <div className="todo-list-icon-placeholder" />
+                    )}
+                    {!isArchived && (
+                      <div className="todo-list-icon-edit-overlay">
+                        <BiPencil />
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={iconInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    style={{ display: "none" }}
+                    onChange={handleIconUpload}
                   />
-                </label>
-                <span className="todo-date-sep">→</span>
-                <label className="todo-date-label">
-                  End
-                  {editingFields.get("end_date") && (
-                    <span className="todo-date-peer-dot" style={{ background: editingFields.get("end_date").color }} title={`${editingFields.get("end_date").username} is editing…`} />
-                  )}
-                  <DatePicker
-                    selected={endDate ? new Date(endDate + "T12:00:00") : null}
-                    onChange={(date) => handleDateChange("end_date", date)}
-                    dateFormat="MMM d, yyyy"
-                    placeholderText="Pick a date"
-                    calendarClassName="todo-calendar"
-                    wrapperClassName="todo-datepicker-wrapper"
-                    calendarContainer={endDateContainer}
-                    onCalendarOpen={() => emitActivity("editing", null, "end_date")}
-                    onCalendarClose={() => emitActivity("idle")}
-                  />
-                </label>
-              </div>
 
-              {itemsLoading ? (
-                <p className="todo-items-hint">Loading…</p>
-              ) : (
-                <div className="todo-items-container">
-                  {items.map((item) => (
-                    <TodoItem
-                      key={item.id}
-                      item={item}
-                      onToggle={handleToggleItem}
-                      onDelete={handleDeleteItem}
-                      onEditText={handleEditItemText}
-                      onStartEditing={(id) => emitActivity("editing", id)}
-                      onStopEditing={() => emitActivity("idle")}
-                      editingUser={editingItems.get(item.id) || null}
-                      flashColor={flashItems.get(item.id) || null}
-                    />
-                  ))}
-
-                  <form className="todo-add-form" onSubmit={handleAddItem}>
-                    <button type="submit" className="todo-add-icon" tabIndex={-1}>
-                      <BiPlus />
-                    </button>
+                  <div className="todo-title-wrap">
                     <input
-                      className="todo-add-input"
-                      value={newItemText}
-                      onChange={(e) => setNewItemText(e.target.value)}
-                      placeholder="Add an item…"
+                      className={`todo-title-input${isArchived ? " archived" : ""}`}
+                      value={title}
+                      onChange={isArchived ? undefined : handleTitleChange}
+                      readOnly={isArchived}
+                      placeholder="Untitled List"
+                      onFocus={isArchived ? undefined : () => { titleFocusedRef.current = true; emitActivity("editing", null, "title"); }}
+                      onBlur={isArchived ? undefined : () => { titleFocusedRef.current = false; emitActivity("idle"); }}
                     />
-                  </form>
+                    {editingFields.get("title") && (
+                      <span className="todo-field-peer-label" style={{ color: editingFields.get("title").color }}>
+                        {editingFields.get("title").username} is editing…
+                      </span>
+                    )}
+                  </div>
+
+                  {presenceUsers.length > 0 && (
+                    <div className="todo-presence-bar">
+                      {presenceUsers.map((u) => (
+                        <span
+                          key={u.userId}
+                          className="todo-presence-dot"
+                          style={{ background: getUserColor(u.userId) }}
+                          title={`${u.username} is here`}
+                        >
+                          {u.username[0].toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {!isArchived && (
+                    <button
+                      className="todo-move-btn"
+                      onClick={() => { setMoveTarget(""); setNewListName(""); setShowMoveModal(true); }}
+                      title="Move incomplete items to another list"
+                    >
+                      <BiTransferAlt />
+                    </button>
+                  )}
+
+                  <button
+                    className={`todo-archive-btn${isArchived ? " unarchive" : ""}`}
+                    onClick={handleArchiveToggle}
+                    title={isArchived ? "Unarchive list" : "Archive list"}
+                  >
+                    {isArchived ? <BiArchiveOut /> : <BiArchiveIn />}
+                  </button>
+
+                  <button
+                    className="todo-delete-list-btn"
+                    onClick={() => handleDeleteList(selectedListId)}
+                    title="Delete list"
+                  >
+                    <BiTrash />
+                  </button>
                 </div>
-              )}
-            </>
-          )}
+
+                <div className="todo-dates-row">
+                  <label className="todo-date-label">
+                    Start
+                    {editingFields.get("start_date") && (
+                      <span className="todo-date-peer-dot" style={{ background: editingFields.get("start_date").color }} title={`${editingFields.get("start_date").username} is editing…`} />
+                    )}
+                    <DatePicker
+                      selected={startDate ? new Date(startDate + "T12:00:00") : null}
+                      onChange={isArchived ? undefined : (date) => handleDateChange("start_date", date)}
+                      dateFormat="MMM d, yyyy"
+                      placeholderText="Pick a date"
+                      disabled={isArchived}
+                      calendarClassName="todo-calendar"
+                      wrapperClassName="todo-datepicker-wrapper"
+                      calendarContainer={startDateContainer}
+                      onCalendarOpen={() => emitActivity("editing", null, "start_date")}
+                      onCalendarClose={() => emitActivity("idle")}
+                    />
+                  </label>
+                  <span className="todo-date-sep">→</span>
+                  <label className="todo-date-label">
+                    End
+                    {editingFields.get("end_date") && (
+                      <span className="todo-date-peer-dot" style={{ background: editingFields.get("end_date").color }} title={`${editingFields.get("end_date").username} is editing…`} />
+                    )}
+                    <DatePicker
+                      selected={endDate ? new Date(endDate + "T12:00:00") : null}
+                      onChange={isArchived ? undefined : (date) => handleDateChange("end_date", date)}
+                      dateFormat="MMM d, yyyy"
+                      placeholderText="Pick a date"
+                      disabled={isArchived}
+                      calendarClassName="todo-calendar"
+                      wrapperClassName="todo-datepicker-wrapper"
+                      calendarContainer={endDateContainer}
+                      onCalendarOpen={() => emitActivity("editing", null, "end_date")}
+                      onCalendarClose={() => emitActivity("idle")}
+                    />
+                  </label>
+                </div>
+
+                {itemsLoading ? (
+                  <p className="todo-items-hint">Loading…</p>
+                ) : (
+                  <div className="todo-items-container">
+                    {items.map((item) => (
+                      <TodoItem
+                        key={item.id}
+                        item={item}
+                        onToggle={handleToggleItem}
+                        onDelete={handleDeleteItem}
+                        onEditText={handleEditItemText}
+                        onStartEditing={(id) => emitActivity("editing", id)}
+                        onStopEditing={() => emitActivity("idle")}
+                        editingUser={editingItems.get(item.id) || null}
+                        flashColor={flashItems.get(item.id) || null}
+                        readOnly={isArchived}
+                      />
+                    ))}
+
+                    {!isArchived && (
+                      <form className="todo-add-form" onSubmit={handleAddItem}>
+                        <button type="submit" className="todo-add-icon" tabIndex={-1}>
+                          <BiPlus />
+                        </button>
+                        <input
+                          className="todo-add-input"
+                          value={newItemText}
+                          onChange={(e) => setNewItemText(e.target.value)}
+                          placeholder="Add an item…"
+                        />
+                      </form>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </main>
       </div>
 

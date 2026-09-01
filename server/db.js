@@ -152,6 +152,7 @@ const initDb = async () => {
   await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS start_date DATE`);
   await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS end_date DATE`);
   await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS icon_url TEXT`);
+  await pool.query(`ALTER TABLE todo_lists ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS todo_items (

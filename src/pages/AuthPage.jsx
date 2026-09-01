@@ -53,7 +53,7 @@ const AuthPage = () => {
           >
             Log In
           </button>
-          <button
+          {/* <button
             className={`auth-tab ${mode === "register" ? "active" : ""}`}
             onClick={() => {
               setMode("register");
@@ -61,7 +61,7 @@ const AuthPage = () => {
             }}
           >
             Register
-          </button>
+          </button> */}
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>

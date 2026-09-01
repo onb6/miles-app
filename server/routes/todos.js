@@ -43,7 +43,7 @@ module.exports = (io) => {
   // PATCH /api/todos/:id — update list (title, start_date, end_date)
   router.patch("/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
-    const { title, start_date, end_date } = req.body;
+    const { title, start_date, end_date, archived } = req.body;
 
     const sets = ["updated_at = NOW()"];
     const vals = [];
@@ -55,6 +55,7 @@ module.exports = (io) => {
     }
     if (start_date !== undefined) { sets.push(`start_date = $${idx++}`); vals.push(start_date || null); }
     if (end_date !== undefined)   { sets.push(`end_date = $${idx++}`);   vals.push(end_date || null); }
+    if (archived !== undefined)   { sets.push(`archived = $${idx++}`);   vals.push(archived); }
     vals.push(id);
 
     try {
